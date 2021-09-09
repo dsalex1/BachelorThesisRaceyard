@@ -1,0 +1,117 @@
+<canvas id="mycanvas" width="500" height="500"></canvas>
+<div>
+<label for="trackWidth">track width</label>
+<input type="range" min="1" max="100" value="10" name="trackWidth" id="trackWidth">
+<label for="spacing">spacing</label>
+<input type="range" min="1" max="100" value="30" name="spacing" id="spacing">
+<button id="reset">Reset</button>
+<button id="download">Download</button>
+<a id="downloadAnchorElem" style="display:none;"></a>
+<div>
+<label for="import">import:</label>
+<input type="file" id="selectFiles" value="Import" name="import" />
+</div>
+</div>
+
+canvas {
+    box-shadow: 0 0 5px rgba(0,0,0,.3);
+    cursor: crosshair;
+}
+
+var elCanvas = document.querySelector('#mycanvas');
+var elTrackWidth = document.querySelector('#trackWidth');
+var elSpacing = document.querySelector('#spacing');
+
+var context = elCanvas.getContext('2d');
+var offsetLeft = elCanvas.offsetLeft;
+var offsetTop  = elCanvas.offsetTop;
+var elPage = document.body;
+var scrollLeft = elPage.scrollLeft;
+var scrollTop  = elPage.scrollTop;
+
+var drawing = false;
+var lastPos = null;
+
+listen(elCanvas, 'mousedown', function(event) {
+    drawing = true;
+    lastPos = getPos(event);
+});
+
+let distance = 0;
+let nextDotTargetDistance = parseFloat(elSpacing.value);
+let data = []
+
+listen(elCanvas, 'mousemove', function(event) {
+    if (!drawing) {
+        return;
+    }
+    
+    var p = getPos(event);
+    context.beginPath();
+    let distDelta= Math.sqrt((lastPos[0]-p[0])**2+(lastPos[1]-p[1])**2)
+    distance+=distDelta
+    console.log(distance)
+    context.moveTo(lastPos[0], lastPos[1]);
+    context.lineTo(p[0], p[1]);
+    context.stroke();
+    
+    if(distance>=nextDotTargetDistance){
+    	nextDotTargetDistance+=parseFloat(elSpacing.value)
+      let d = parseFloat(trackWidth.value)/distDelta;
+			drawCircle(context,p[0]-(lastPos[1]-p[1])*d,p[1]+(lastPos[0]-p[0])*d,5,"#0000FF")			
+      drawCircle(context,p[0]+(lastPos[1]-p[1])*d,p[1]-(lastPos[0]-p[0])*d,5,"#FF0000")
+    }
+    lastPos = p;
+});
+listen(document, 'mouseup', function(event) {
+    drawing = false;
+});
+listen(document.querySelector('#download'), 'click', function(event) {
+    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+    var dlAnchorElem = document.getElementById('downloadAnchorElem');
+    dlAnchorElem.setAttribute("href",     dataStr     );
+    dlAnchorElem.setAttribute("download", "trackCones.json");
+    dlAnchorElem.click();
+});
+listen(document.querySelector('#reset'), 'click', function(event) {
+		reset()
+});
+
+function reset(){
+		context.clearRect(0, 0, elCanvas.width, elCanvas.height);
+    distance = 0;   
+    nextDotTargetDistance = parseFloat(elSpacing.value);
+    data=[];
+}
+
+listen(document, 'scroll', function(event) {
+    scrollLeft = elPage.scrollLeft;
+    scrollTop  = elPage.scrollTop;
+});
+
+function listen(elem, type, listener) {
+    elem.addEventListener(type, listener, false);
+}
+
+function getPos(event) {
+    var x = event.clientX - offsetLeft + scrollLeft;
+    var y = event.clientY - offsetTop  + scrollTop;
+    return [x, y];
+}
+function drawCircle(ctx, x, y, radius, fill) {
+  data.push({x:Math.round(x*100)/100,y:Math.round(y*100)/100,color:fill})
+  ctx.beginPath()
+  ctx.arc(x, y, radius, 0, 2 * Math.PI, false)
+  if (fill) {
+    ctx.fillStyle = fill
+    ctx.fill()
+  }
+}
+
+document.getElementById('selectFiles').onchange = async function() {
+    var files = document.getElementById('selectFiles').files;
+  console.log(files);
+   let result = JSON.parse(await files[0].text())
+   reset()
+   result.forEach(({x,y,color})=>drawCircle(context,x,y,5,color))
+};
