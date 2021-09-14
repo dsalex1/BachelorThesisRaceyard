@@ -6,6 +6,8 @@ import numpy as np
 from functools import reduce
 import json, argparse
 import random
+from christofides import tsp
+from statistics import median
 
 def cones_to_xy(cones):
     """ Expands the cone objects list to x, y position of cones
@@ -239,6 +241,28 @@ def return_list(ls):
         ret.append([l[0], l[1]])
     return ret
 
+def sort_and_orientate(blue_cones,yellow_cones):
+    #sort the points using an traveling salesperson approximation
+    blue_cones = tsp(blue_cones)
+    yellow_cones = tsp(yellow_cones)
+
+    #the point in yellow_cones that ist closest to the 2nd (index 1) point in blue_cones likely coresponds to it
+    yellowStart = yellow_cones.index(reduce(
+        (lambda a, b: a if np.linalg.norm(np.subtract(a, blue_cones[1])) < np.linalg.norm(np.subtract(b, blue_cones[1])) else b),
+        yellow_cones))
+
+    # using this correspondence we can fix the orientation, going one index step further in yellow_cones this point should
+    # correspond to the 3rd point in blue_cones, but if its closer to the 1st point, yellow_cones and blue_cones are likely
+    # going in oposit directions, so we reverse yellow_corner and adjust the saved index yellowStart according to the reverse
+    if (np.linalg.norm(np.subtract(yellow_cones[(yellowStart+1) % len(yellow_cones)], blue_cones[2])) >
+        np.linalg.norm(np.subtract(yellow_cones[(yellowStart + 1) % len(yellow_cones)], blue_cones[0]))):
+        yellow_cones = yellow_cones[::-1]
+        yellowStart = len(yellow_cones)-yellowStart-1
+
+    #now that the orientation is the same for both points, we can shift yellow_cones so that both lists start with nearby points
+    yellow_cones = yellow_cones[yellowStart-1:] + yellow_cones[:yellowStart-1]
+
+    return blue_cones,yellow_cones
 
 def pre_process_cones(blue_cones, yellow_cones, noisy_cones):
     """ Pre-processing of cones having mis-identified color, redundant cones, unsorted order
@@ -271,10 +295,8 @@ def pre_process_cones(blue_cones, yellow_cones, noisy_cones):
     yellow_cones = remove_dup(yellow_cones)
 
     # ---> Sorting the cones
-    blue_cones = get_sorted(blue_cones)
-    yellow_cones = get_sorted(yellow_cones)
-    blue_cones = orient_clockwise(blue_cones)
-    yellow_cones = orient_clockwise(yellow_cones)
+    blue_cones,yellow_cones = sort_and_orientate(blue_cones,yellow_cones)
+
 
     def addMissing(group1, group2, width, spacing, fac):
         for i in range(1,len(group1)-1):
@@ -293,13 +315,39 @@ def pre_process_cones(blue_cones, yellow_cones, noisy_cones):
             if np.linalg.norm(np.subtract(point, closest)) > spacing * 0.5:
                 group2.append(point.tolist())# otherwise append the new point
 
-    #addMissing(yellow_cones, blue_cones, 54/500, 30/500, -1);
+    def deriveSpacing(points):
+        #distances between consecutive points
+        #take the median as estimated for the generating distance
+        return median([(np.linalg.norm(np.subtract(p, points[i + 1])) if points[i + 1] else 0) for i, p in enumerate(points[:-1])])
 
-    #addMissing(blue_cones, yellow_cones, 54/500, 30/500, 1);
-    #blue_cones = get_sorted(blue_cones)
-    #yellow_cones = get_sorted(yellow_cones)
-    #blue_cones = orient_clockwise(blue_cones)
-    #yellow_cones = orient_clockwise(yellow_cones)
+    def closest(points,p):
+        return reduce((lambda a,b: a if np.linalg.norm(np.subtract(a, p)) < np.linalg.norm(np.subtract(b, p)) else b), points)
+
+    def getSignedArea(points):
+        signedArea = 0
+        for i in range(len(points)):
+            x1 = points[i][0]
+            y1 = points[i][1]
+            x2 = points[(i+1)%len(points)][0]
+            y2 = points[(i+1)%len(points)][1]
+            signedArea += (x1 * y2 - x2 * y1)
+        return signedArea / 2
+
+    derivedSpacingBlue = deriveSpacing(blue_cones)
+
+    derivedSpacingYellow = deriveSpacing(yellow_cones)
+
+    derivedWidth = median(
+        [np.linalg.norm(np.subtract(p, closest(yellow_cones, p))) for p in blue_cones] +
+        [np.linalg.norm(np.subtract(p, closest(blue_cones, p))) for p in yellow_cones])
+
+    clockwise = getSignedArea(yellow_cones)>getSignedArea(blue_cones)
+
+    addMissing(yellow_cones, blue_cones, derivedWidth, derivedSpacingYellow, 1 if clockwise else -1)
+
+    addMissing(blue_cones, yellow_cones, derivedWidth, derivedSpacingBlue, -1 if clockwise else 1)
+
+    blue_cones, yellow_cones = sort_and_orientate(blue_cones, yellow_cones)
 
     return blue_cones, yellow_cones
 
@@ -321,8 +369,8 @@ class CenterLineEstimation:
         if self.calc_once:
             # print('Callback_Called')
 
-            cone_blue = [[177.2,51.12],[178.2,51.12],[179.2,51.12]]
-            cone_yellow = [[177.2,50.12],[178.2,50.12],[179.2,50.12]]
+            cone_blue = [[304.21,185.84],[351.19,243.15],[317.43,326.95],[242.02,339.94],[176.5,323.98],[141.02,240.94],[186.19,164.72],[257.54,146.9]]
+            cone_yellow = [[269.83,230.04],[296.86,256.73],[288.62,278.93],[242.02,283.94],[201.54,273.9],[197.02,240.94],[205.85,217.16],[232.5,196.98]]
             faulty_cones = []
 
             parser = argparse.ArgumentParser()
@@ -338,9 +386,11 @@ class CenterLineEstimation:
             if args.faulty_cones is not None:
                 faulty_cones = json.loads(args.faulty_cones)
 
-            #random.shuffle(cone_blue)
-            #random.shuffle(cone_yellow)
-            #random.shuffle(faulty_cones)
+            random.seed(42)
+
+            random.shuffle(cone_blue)
+            random.shuffle(cone_yellow)
+            random.shuffle(faulty_cones)
 
             blue_x, blue_y = zip(*cone_blue)
             yellow_x, yellow_y = zip(*cone_yellow)

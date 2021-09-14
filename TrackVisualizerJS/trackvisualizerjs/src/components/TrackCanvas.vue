@@ -390,32 +390,26 @@ export default class TrackCanvas extends Vue {
             this.drawCircleRaw(x, y, 5, hidden ? "#DDDDDD" : undetect ? "#000" : color)
         );
 
-        this.strokePolygon(this.detection.blueDetected || [], "#7777FF", 1, 0, 3, true, true);
-        this.strokePolygon(this.detection.yellowDetected || [], "#FF7777", 1, 0, 3, true, true);
-        this.strokePolygon(this.detection.midLine || [], "#00FF00", 1, 0, 5, true, true);
+        this.strokePolygon(this.detection.blueDetected || [], "#7777FF", 3, true, true);
+        this.strokePolygon(this.detection.yellowDetected || [], "#FF7777", 3, true, true);
+        this.strokePolygon(this.detection.midLine || [], "#00FF00", 5, true, true);
 
-        this.strokePolygon(this.trackData.groundTruth, "#000000", 1, 0, 3, true, false);
+        this.strokePolygon(this.trackData.groundTruth, "#000000", 3, true, false);
     }
-    strokePolygon(
-        pointsArray: [number, number][],
-        strokeColor: string,
-        scale: number,
-        offset: number,
-        radius: number,
-        stroke?: boolean,
-        circles?: boolean
-    ) {
+    strokePolygon(pointsArray: [number, number][], strokeColor: string, radius: number, stroke?: boolean, circles?: boolean) {
         if (pointsArray.length <= 0) return;
         this.context.beginPath();
+
         if (strokeColor) this.context.strokeStyle = strokeColor;
         if (stroke)
-            for (let i = 0; i < pointsArray.length; i++) {
-                this.context.lineTo(pointsArray[i][0] * scale + offset, pointsArray[i][1] * scale + offset);
+            for (let i = 0; i < pointsArray.length - 1; i++) {
+                this.drawArrow(pointsArray[i], min(pointsArray[i + 1], pointsArray[i]), strokeColor);
+                //this.context.lineTo(pointsArray[i][0] * scale + offset, pointsArray[i][1] * scale + offset);
             }
         this.context.stroke();
         if (circles)
             for (let i = 0; i < pointsArray.length; i++) {
-                this.drawCircle(pointsArray[i][0] * scale + offset, pointsArray[i][1] * scale + offset, radius, strokeColor);
+                this.drawCircle(pointsArray[i][0], pointsArray[i][1], radius, strokeColor);
             }
     }
 }
