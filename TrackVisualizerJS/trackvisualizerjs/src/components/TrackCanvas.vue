@@ -48,14 +48,17 @@
                 <input type="checkbox" class="form-check" v-model="freezeGroundTruth" />
             </div>
 
-            <button @click="reset" class="btn btn-secondary my-2 me-4">Reset</button>
-            <button @click="download" class="btn btn-primary my-2 me-4">Download</button>
-            <button @click="addMissingPressed" class="btn btn-success my-2 me-4">Add missing</button>
-            <button @click="calculatePython" class="btn btn-info my-2" :disabled="pythonLoading">
-                Calculate Python <span v-if="pythonLoading">(loading...)</span>
+            <button @click="reset" class="btn btn-danger my-2 me-4">Reset</button>
+            <button @click="download" class="btn btn-secondary my-2 me-4">Download</button>
+            <button @click="addMissingPressed" class="btn btn-info my-2 me-4">Add missing</button>
+            <button @click="calculatePython" class="btn btn-success my-2" :disabled="pythonLoading">
+                Calculate Python Midline <span v-if="pythonLoading">(loading...)</span>
             </button>
             <hr />
             <a id="downloadAnchorElem" style="display: none"></a>
+            <div class="form-group">
+                <DemoChooser @fileSelected="openDemo" />
+            </div>
             <div class="form-group">
                 <label>import YAML</label>
                 <input @change="YAMLFilesChange" type="file" class="form-control" />
@@ -155,7 +158,7 @@ export default class TrackCanvas extends Vue {
             cone_yellow = [[107.75,93.59],[134.55,83.19],[170.64,75.03],[194.2,72.39],[222.2,69.39],[248.2,69.39],[275.2,69.39],[306.52,73.26],[326.72,77.68],[330.6,130.19],[320.66,133.2],[283.11,157.3],[262.06,185.32],[340.2,281.39],[361.91,293.87],[362.06,296.47],[369.2,311.39],[370.2,343.39],[365.06,356.32],[353.11,371.3],[330.31,379.24],[303.13,387.25],[287.2,390.39],[255.2,393.39],[225.2,393.39],[196.2,393.39],[162.2,391.39],[155.4,388.79],[124.28,377.25],[100.49,365.65],[84.3,349.3],[81.68,333.1],[81.2,310.39],[84.82,287.93],[89.27,262.42],[98.2,219.39],[101.68,198.69],[105.35,177.47],[111.4,141.94],[108.2,106.39]]
             faulty_cones = []
         `;*/
-        if (!(window as any).pyodide)
+        /*if (!(window as any).pyodide)
             (window as any).pyodide = await loadPyodide({
                 indexURL: "https://cdn.jsdelivr.net/pyodide/v0.18.0/full/",
             });
@@ -166,7 +169,7 @@ export default class TrackCanvas extends Vue {
         console.warn("BEFORE IMPORT");
         await this.pyodide.loadPackagesFromImports(code);
         console.warn("AFTER IMPORT");
-        this.pythonLoading = false;
+        this.pythonLoading = false;*/
     }
     d(p: [number, number], p2: [number, number]) {
         return Math.sqrt(Math.pow(p[0] - p2[0], 2) + Math.pow(p[1] - p2[1], 2));
@@ -455,11 +458,20 @@ export default class TrackCanvas extends Vue {
         }
     }
 
+    async openDemo(fileName: string) {
+        this.reset();
+        const text = await (await fetch(fileName)).text();
+        let result = YAML.parse(text) as YAMLFile;
+        this.loadYAMLFile(result);
+    }
     async YAMLFilesChange(event: Event) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         var files = (event.target as HTMLInputElement).files!;
         console.log(files);
         let result = YAML.parse(await files[0].text()) as YAMLFile;
+        this.loadYAMLFile(result);
+    }
+    loadYAMLFile(result: YAMLFile) {
         const { cones_left, cones_orange, cones_orange_big, cones_right } = result;
 
         console.log([cones_left, cones_orange, cones_orange_big, cones_right]);
