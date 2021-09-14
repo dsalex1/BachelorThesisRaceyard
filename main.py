@@ -277,6 +277,11 @@ def pre_process_cones(blue_cones, yellow_cones, noisy_cones):
 
     def addMissing(group1, group2, width, spacing, fac):
         for i in range(1,len(group1)-1):
+            if np.linalg.norm(np.subtract(group1[i], group1[i + 1])) > spacing * 2:
+                continue
+            if np.linalg.norm(np.subtract(group1[i], group1[i - 1])) > spacing * 2:
+                continue
+
             n = np.add(np.subtract(group1[i], group1[i + 1]), np.subtract(group1[i - 1], group1[i])) #tangent vector to group1[i]
             n = np.divide([n[1],-n[0]],np.sqrt(np.sum(n**2))) # normalize and rotate by 90°, so we get the normal vector
             point = np.add(group1[i], np.multiply(n, width * fac)) # fac decides whether its the inner or outer normal vector
@@ -287,9 +292,9 @@ def pre_process_cones(blue_cones, yellow_cones, noisy_cones):
             if np.linalg.norm(np.subtract(point, closest)) > spacing * 0.5:
                 group2.append(point.tolist())# otherwise append the new point
 
-    addMissing(yellow_cones, blue_cones, 25/500, 30/500, -1);
-    addMissing(blue_cones, yellow_cones, 25/500, 30/500, 1);
+    #addMissing(yellow_cones, blue_cones, 30/500, 40/500, -1);
 
+    #addMissing(blue_cones, yellow_cones, 30/500, 40/500, 1);
     blue_cones = get_sorted(blue_cones)
     yellow_cones = get_sorted(yellow_cones)
     blue_cones = orient_clockwise(blue_cones)
@@ -315,19 +320,15 @@ class CenterLineEstimation:
         if self.calc_once:
             # print('Callback_Called')
 
-            cone_blue = [[52, 168], [61.64, 99.49], [73.68, 78.45], [129.57, 45.3], [162, 41], [195, 40], [223, 40],
-                         [252, 41], [283, 41], [313.17, 47.24], [342.64, 54.14], [374.16, 63.51], [402.07, 79.93],
-                         [421.49, 107.84], [431, 138], [438.7, 163.57], [441, 202], [442, 226], [436.49, 288.16],
-                         [427.49, 318.16], [420.7, 344.43], [410.94, 376.47], [398.94, 400.47], [365, 422],
-                         [341.16, 433.49], [310, 441], [281, 444], [250, 443], [215.06, 427.47], [201, 400], [200, 370],
-                         [197.51, 341.16], [188.51, 315.16], [176.06, 291.47], [160, 283], [125.93, 271.07],
-                         [103.84, 266.49], [81, 258], [58.06, 229.47], [49, 197]]
-            cone_yellow = [[72, 168], [72, 139], [80.36, 106.51], [90.32, 89.55], [112.07, 72.07], [134.43, 64.7],
-                           [162, 61], [223, 60], [252, 61], [283, 61], [308.83, 66.76], [421, 202], [422, 226],
-                           [442, 259], [422, 259], [417.51, 281.84], [408.51, 311.84], [393.06, 367.53],
-                           [381.06, 391.53], [365, 402], [334.84, 414.51], [310, 421], [281, 424], [216.49, 334.84],
-                           [207.49, 308.84], [193.94, 282.53], [160, 263]]
-            faulty_cones = [[52, 139], [195, 60]]
+            cone_blue = [[39.85, 131.51], [80.66, 106.94], [148.3, 85.39], [200.3, 80.39], [271.87, 105.82],
+                         [294.74, 134.51], [388.85, 148.51], [419.72, 125.82]]
+            cone_yellow = [[74.74, 201.28], [123.93, 171.84], [216.72, 160.97], [259.85, 204.28], [309.3, 235.39],
+                           [359.3, 241.39], [423.74, 218.28], [474.87, 180.97]]
+            faulty_cones = [[74.74, 201.28]]
+
+
+
+
 
             blue_x, blue_y = zip(*cone_blue)
             yellow_x, yellow_y = zip(*cone_yellow)
@@ -346,8 +347,8 @@ class CenterLineEstimation:
 
             blue_cones, yellow_cones = [[c[0] * 500, c[1] * 500] for c in blue_cones], [[c[0] * 500, c[1] * 500] for c
                                                                                         in yellow_cones]
-            print ("cone_blue = "+str(blue_cones))
-            print ("cone_yellow = "+str(yellow_cones))
+            print ("cone_blue_detected = "+str(blue_cones))
+            print ("cone_yellow_detected = "+str(yellow_cones))
 
             # ---> Join the ends of map(make circular) --pre-processing filters the duplicate cones
             if not self.initial_lap:
