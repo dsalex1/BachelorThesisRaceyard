@@ -1,0 +1,1 @@
+canvas{box-shadow:0 0 5px rgba(0,0,0,.3);cursor:crosshair}input[type=range][disabled].handle-red::-webkit-slider-thumb{background:#ad6868!important}input[type=range][disabled].handle-blue::-webkit-slider-thumb{background:#6161b6!important}
