@@ -4,7 +4,8 @@ import scipy.interpolate as si
 from sklearn import svm
 import numpy as np
 from functools import reduce
-
+import json, argparse
+import random
 
 def cones_to_xy(cones):
     """ Expands the cone objects list to x, y position of cones
@@ -292,13 +293,13 @@ def pre_process_cones(blue_cones, yellow_cones, noisy_cones):
             if np.linalg.norm(np.subtract(point, closest)) > spacing * 0.5:
                 group2.append(point.tolist())# otherwise append the new point
 
-    #addMissing(yellow_cones, blue_cones, 30/500, 40/500, -1);
+    #addMissing(yellow_cones, blue_cones, 54/500, 30/500, -1);
 
-    #addMissing(blue_cones, yellow_cones, 30/500, 40/500, 1);
-    blue_cones = get_sorted(blue_cones)
-    yellow_cones = get_sorted(yellow_cones)
-    blue_cones = orient_clockwise(blue_cones)
-    yellow_cones = orient_clockwise(yellow_cones)
+    #addMissing(blue_cones, yellow_cones, 54/500, 30/500, 1);
+    #blue_cones = get_sorted(blue_cones)
+    #yellow_cones = get_sorted(yellow_cones)
+    #blue_cones = orient_clockwise(blue_cones)
+    #yellow_cones = orient_clockwise(yellow_cones)
 
     return blue_cones, yellow_cones
 
@@ -320,19 +321,30 @@ class CenterLineEstimation:
         if self.calc_once:
             # print('Callback_Called')
 
-            cone_blue = [[39.85, 131.51], [80.66, 106.94], [148.3, 85.39], [200.3, 80.39], [271.87, 105.82],
-                         [294.74, 134.51], [388.85, 148.51], [419.72, 125.82]]
-            cone_yellow = [[74.74, 201.28], [123.93, 171.84], [216.72, 160.97], [259.85, 204.28], [309.3, 235.39],
-                           [359.3, 241.39], [423.74, 218.28], [474.87, 180.97]]
-            faulty_cones = [[74.74, 201.28]]
+            cone_blue = [[177.2,51.12],[178.2,51.12],[179.2,51.12]]
+            cone_yellow = [[177.2,50.12],[178.2,50.12],[179.2,50.12]]
+            faulty_cones = []
 
+            parser = argparse.ArgumentParser()
+            parser.add_argument('--cone_blue', '-b', help="the cone_blue data to use", type=str)
+            parser.add_argument('--cone_yellow', '-y', help="the cone_yellow data to use", type=str)
+            parser.add_argument('--faulty_cones', '-f', help="the faulty_cones data to use", type=str)
+            args = parser.parse_args()
 
+            if args.cone_blue is not None:
+                cone_blue = json.loads(args.cone_blue)
+            if args.cone_yellow is not None:
+                cone_yellow = json.loads(args.cone_yellow)
+            if args.faulty_cones is not None:
+                faulty_cones = json.loads(args.faulty_cones)
 
-
+            #random.shuffle(cone_blue)
+            #random.shuffle(cone_yellow)
+            #random.shuffle(faulty_cones)
 
             blue_x, blue_y = zip(*cone_blue)
             yellow_x, yellow_y = zip(*cone_yellow)
-            faulty_x, faulty_y = zip(*faulty_cones)
+            faulty_x, faulty_y = zip(*faulty_cones) if len(faulty_cones)>0 else [[],[]]
 
             blue_cones = bind_xy(blue_x, blue_y)
             yellow_cones = bind_xy(yellow_x, yellow_y)
