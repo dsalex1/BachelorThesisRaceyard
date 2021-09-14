@@ -12,9 +12,11 @@
         "bootstrap": "^5.1.1",
         "core-js": "^3.6.5",
         "vue": "^3.0.0",
-        "vue-class-component": "^8.0.0-0"
+        "vue-class-component": "^8.0.0-0",
+        "yamljs": "^0.3.0"
     },
     "devDependencies": {
+        "@types/yamljs": "^0.2.31",
         "@typescript-eslint/eslint-plugin": "^4.31.0",
         "@typescript-eslint/parser": "^4.31.0",
         "@vue/cli-plugin-babel": "^4.5.13",
