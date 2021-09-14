@@ -158,7 +158,7 @@ export default class TrackCanvas extends Vue {
             cone_yellow = [[107.75,93.59],[134.55,83.19],[170.64,75.03],[194.2,72.39],[222.2,69.39],[248.2,69.39],[275.2,69.39],[306.52,73.26],[326.72,77.68],[330.6,130.19],[320.66,133.2],[283.11,157.3],[262.06,185.32],[340.2,281.39],[361.91,293.87],[362.06,296.47],[369.2,311.39],[370.2,343.39],[365.06,356.32],[353.11,371.3],[330.31,379.24],[303.13,387.25],[287.2,390.39],[255.2,393.39],[225.2,393.39],[196.2,393.39],[162.2,391.39],[155.4,388.79],[124.28,377.25],[100.49,365.65],[84.3,349.3],[81.68,333.1],[81.2,310.39],[84.82,287.93],[89.27,262.42],[98.2,219.39],[101.68,198.69],[105.35,177.47],[111.4,141.94],[108.2,106.39]]
             faulty_cones = []
         `;*/
-        /*if (!(window as any).pyodide)
+        if (!(window as any).pyodide)
             (window as any).pyodide = await loadPyodide({
                 indexURL: "https://cdn.jsdelivr.net/pyodide/v0.18.0/full/",
             });
@@ -169,7 +169,7 @@ export default class TrackCanvas extends Vue {
         console.warn("BEFORE IMPORT");
         await this.pyodide.loadPackagesFromImports(code);
         console.warn("AFTER IMPORT");
-        this.pythonLoading = false;*/
+        this.pythonLoading = false;
     }
     d(p: [number, number], p2: [number, number]) {
         return Math.sqrt(Math.pow(p[0] - p2[0], 2) + Math.pow(p[1] - p2[1], 2));
