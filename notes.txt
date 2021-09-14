@@ -1,0 +1,10 @@
+heuristiken für path finding
+
+fehler metrik von ground truth zu midline
+ableitung der kurven vergelichen, für lokale unterschiede, wegen global offset
+
+ros tutorial http://wiki.ros.org/ROS/Tutorials
+
+MLP: daten input und ouput formate überlegen
+
+CNN, idee aber später

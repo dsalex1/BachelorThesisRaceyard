@@ -344,11 +344,11 @@ def pre_process_cones(blue_cones, yellow_cones, noisy_cones):
 
     clockwise = getSignedArea(yellow_cones)>getSignedArea(blue_cones)
 
-    #addMissing(yellow_cones, blue_cones, derivedWidth, derivedSpacingYellow, 1 if clockwise else -1)
+    addMissing(yellow_cones, blue_cones, derivedWidth, derivedSpacingYellow, 1 if clockwise else -1)
 
-    #addMissing(blue_cones, yellow_cones, derivedWidth, derivedSpacingBlue, -1 if clockwise else 1)
+    addMissing(blue_cones, yellow_cones, derivedWidth, derivedSpacingBlue, -1 if clockwise else 1)
 
-    #blue_cones, yellow_cones = sort_and_orientate(blue_cones, yellow_cones)
+    blue_cones, yellow_cones = sort_and_orientate(blue_cones, yellow_cones)
 
     return blue_cones, yellow_cones
 
@@ -367,6 +367,7 @@ class CenterLineEstimation:
         return self.map
 
     def mapCallback(self, slam_map):
+        global args
         if self.calc_once:
             # print('Callback_Called')
 
@@ -378,7 +379,8 @@ class CenterLineEstimation:
             parser.add_argument('--cone_blue', '-b', help="the cone_blue data to use", type=str)
             parser.add_argument('--cone_yellow', '-y', help="the cone_yellow data to use", type=str)
             parser.add_argument('--faulty_cones', '-f', help="the faulty_cones data to use", type=str)
-            args = parser.parse_args()
+            if (args is None):
+                args = parser.parse_args()
 
             if args.cone_blue is not None:
                 cone_blue = json.loads(args.cone_blue)
@@ -410,8 +412,9 @@ class CenterLineEstimation:
 
             blue_cones, yellow_cones = [[c[0] * 500, c[1] * 500] for c in blue_cones], [[c[0] * 500, c[1] * 500] for c
                                                                                         in yellow_cones]
-            print ("cone_blue_detected = "+str(blue_cones))
-            print ("cone_yellow_detected = "+str(yellow_cones))
+            output = []
+            output.append(blue_cones)
+            output.append(yellow_cones)
 
             # ---> Join the ends of map(make circular) --pre-processing filters the duplicate cones
             if not self.initial_lap:
@@ -441,13 +444,13 @@ class CenterLineEstimation:
                 center_line.append([mx, my])
 
             # result:
-            print ("midLine = "+str(center_line))
-
+            output.append(center_line)
+            return output
 
 if __name__ == "__main__":
     center_line_est = CenterLineEstimation()
 
-    center_line_est.mapCallback(None)
+    result = center_line_est.mapCallback(None)
     # try:
     #    while (True):
     #        maping = center_line_est.getMap()
