@@ -1,6 +1,9 @@
 <template>
     <div class="d-flex">
-        <div>
+        <div class="">
+            <div>
+                <h4>{{ name }}</h4>
+            </div>
             <canvas
                 ref="canvas"
                 @mousedown="canvasMouseDown"
@@ -9,6 +12,18 @@
                 width="500"
                 height="500"
             ></canvas>
+            <div style="width: 500px">
+                click to edit single points (freeze ground truth before starting to edit)<br />
+                <div style="display: inline-block; background: #ff0000; width: 10px; height: 10px; border-radius: 5px" />
+                <div class="ms-1" style="display: inline-block; background: #0000ff; width: 10px; height: 10px; border-radius: 5px" />
+                left/right
+                <div class="ms-2" style="display: inline-block; background: #000000; width: 10px; height: 10px; border-radius: 5px" />
+                unrecognized color
+                <div class="ms-2" style="display: inline-block; background: #dddddd; width: 10px; height: 10px; border-radius: 5px" />
+                non existent
+                <div class="ms-2" style="display: inline-block; background: #00ff00; width: 10px; height: 10px; border-radius: 5px" />
+                midline
+            </div>
         </div>
         <div class="ms-3" style="flex: 1">
             <div class="form-group">
@@ -141,6 +156,7 @@ export default class TrackCanvas extends Vue {
     private detection = {} as Detection;
 
     private outputError = "";
+    private name = "";
 
     get context() {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -218,6 +234,8 @@ export default class TrackCanvas extends Vue {
         this.trackData.pylons = [];
         this.trackData.groundTruth = [];
         this.detection = {};
+
+        this.name = "";
     }
 
     private groundTruthToBeAdded = [] as [number, number][];
@@ -228,6 +246,8 @@ export default class TrackCanvas extends Vue {
         this.lastPos = this.getPos(event);
         this.groundTruthToBeAdded.push(this.lastPos.map((n) => Math.round(n * 100) / 100) as [number, number]);
         this.startPos = this.lastPos;
+
+        if (this.name != "" && !this.name.includes("edited")) this.name += " (edited)";
     }
 
     canvasMouseMove(event: MouseEvent) {
@@ -458,9 +478,10 @@ export default class TrackCanvas extends Vue {
         }
     }
 
-    async openDemo(fileName: string) {
+    async openDemo(file: { path: string; name: string }) {
         this.reset();
-        const text = await (await fetch(fileName)).text();
+        this.name = file.name;
+        const text = await (await fetch(file.path)).text();
         let result = YAML.parse(text) as YAMLFile;
         this.loadYAMLFile(result);
     }

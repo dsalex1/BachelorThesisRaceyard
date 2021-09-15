@@ -9,7 +9,7 @@
                             <button type="button" class="btn-close p-3" @click="showModal = false"></button>
                         </div>
                         <div class="modal-body row" style="max-height: 80vh; overflow: auto">
-                            <div class="col-12 col-md-6 col-lg-4 col-xl-3" v-for="track in tracks" :key="track" @click="select(track.path)">
+                            <div class="col-12 col-md-6 col-lg-4 col-xl-3" v-for="track in tracks" :key="track" @click="select(track)">
                                 <div class="card mb-4">
                                     <img class="card-img-top" :src="track.img" @error="track.img = 'https://demofree.sirv.com/nope-not-here.jpg'" />
                                     <div class="card-body">
@@ -42,9 +42,9 @@ export default class DemoChooser extends Vue {
             .map((_, i) => `random_track_${("00" + i).slice(-3)}`),
     ].map((track) => ({ name: track, img: `./YAML/${track}.png`, path: `./YAML/${track}.yaml` }));
 
-    select(path: string) {
+    select(track: { path: string; name: string }) {
         this.showModal = false;
-        this.$emit("fileSelected", path);
+        this.$emit("fileSelected", track);
     }
 }
 </script>
