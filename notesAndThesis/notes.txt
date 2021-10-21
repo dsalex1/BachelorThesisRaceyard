@@ -1,3 +1,13 @@
+14.10.2021
+light slam farbinfos übermitteln
+src/rosyard_pipe_2_slam/src/light_slam.cpp:214-223
+
+zeile 168 cones soltlen farbe beinhalten
+
+in roswary_common/config/msg/Langmark.msg
+
+aus repo alexbagstuff löschen
+
 21.10.2021
 color info fertig
 par heuristiken zu color
