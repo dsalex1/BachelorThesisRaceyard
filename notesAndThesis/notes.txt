@@ -1,0 +1,22 @@
+21.10.2021
+color info fertig
+par heuristiken zu color
+
+deep learning 
+literatur
+und ansätze/inputs/ideen
+
+reinforcement
+direkt von bild zu strecke ohne slam
+
+
+schreiben:
+outline
+grundlagen,
+deep learning, slam (so ne seite),
+stochastic gradient descent herleitung eventuell
+auf jeden fall theoretische grundlagen auch
+
+das was ich gemacht hab in notizen formulieren
+
+motivation/herleitung problem: raceyard allgemein
