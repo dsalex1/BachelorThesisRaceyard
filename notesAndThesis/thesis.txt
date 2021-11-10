@@ -1,0 +1,92 @@
+fragen:
+template für thesis/latex?
+frühere theses?
+zuordnung welche slam punkte "dieselben" sind über frames hinnaus, uuid?
+
+
+
+20-40 pages
+graphics and illustrations. 
+third introduction + basics,
+a third methods
+third evaluation + discussion. 
+  Hand in early drafts to your supervisor to get feedback and understand what is important to your supervisor. 
+
+
+abstract 
+    - advancing technology in automation of driving and in controlled environment racing
+    - reconstruction of abstract racing map from camera and lidar input, using slam output or using direct output
+    - implemented in two ways a classical approch using foo bar and heuristics
+    - and machine learning approach using mlp, cnn, etc.
+
+introduction
+    research question?
+    motivation
+    goals
+    related work
+background/foundation
+    deep learning and mlp
+    (stochastic gradient descent)
+
+    TSP approximation
+    (b-)splines (bezier curves?)
+    slam
+
+    rosyard
+    pipeline (dockerized)
+    dev environment
+        web technologies/pyodide
+methods
+    classical approach
+        based on master project Vaishnav/Agrawal
+        improvements:
+            1. readding missing points 
+            2. using covariance to filter points
+            (3. use proximity to car to add points)
+            (4. use orientation relative to car to recolor)
+            5. b spline glätten 
+    machine learning approach
+        point 10m further down the midline
+discussion
+    evaluation how well solutions solve the problem respectively
+    metrics
+        local similarity, 
+            transform to local coordinates
+            use derivation of positions
+            euclidian distance, more interpretability
+    comparison of approaches
+conclusion
+    future work
+    where this work leads to
+
+
+Interesse an Projekt Autonomie-Aspekt geweckt, 
+Zusammenspiel aus Bild- und Lidar-Erkennung und Deep Learning,
+daraus abstrakte Darstellung der Umgebung und "path finding" darin.
+full self-driving autopilot Tesla, ähnliche Ambitionen zur Autonomie bei Raceyard
+
+Schwächen bsheriger Algorithmus, Rot anstatt Gelb, Schwarz nicht klassifizierte Punkte, Grau gänzlich nicht detektierte Punkte,
+schwarze Linie ground truth, Der Algorithmus macht die grüne Linie daraus.
+wo die Pylonen perfekt erkannt wurden, grüne Linie exakt auf ground truth,
+da wo die Farbe nicht erkannt wurde, passieren ganz komische dinge
+und da wo oben rechts gar keine Roten erkannt wurden weicht es sehr vom eigentlichen Track ab.
+Eingabekarte: https://gyazo.com/645d505ed8a7b1ae5bd6ac8d6a867348
+ERgebnis: https://gyazo.com/43237dba0fb02314743c860a9360e520
+
+
+erster Ansatz, Punkte auf einer Seite fehlen,
+ also orthogonal zur Tangente eines Pylons mit dem Abstand der Trackbreite kein andersfarbiger Pylon, dann ergänzt
+https://gyazo.com/38577684278cf937f521c3c4cbf3835a
+
+Probleme des SLAMs wären wahrscheinlich noch verrauschte Position, Drifts und Doppelterkennungen.
+
+echte daten:
+https://gyazo.com/60c4223b8f38d32ed84137b4aa98ae09
+2. ansatz Covarianzen rumgespielt, nur Punkte mit entsprechend kleiner Covarianz
+mit covarianz filter: https://gyazo.com/8c58c259adede0fb5b1eb977704b9655
+
+Idee: neue Punkte nur in der Nähe des Autos zur Karte hinzufügen,
+
+python script direkt im browser ausgeführt wird, und man dafür keinen extra server braucht um den python teil auszuführen,
+ dadurch kann alles statically geserved werden, z.b. auf github pages: https://dsalex1.github.io/BachelorThesisRaceyard/
+pyodide
