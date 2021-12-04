@@ -1,0 +1,41 @@
+
+
+\graphicspath{{Chapter/Figs/basics/}}
+\chapter{Foundations and Technologies}
+\label{chap:basics}
+
+\section{Discrete Curvature}
+Discrete curvature applies the concept of curvature from a continuous curve to a discrete curve called a polyline.
+
+\vskip 0.2in
+
+\picWrap{Polyline over $P_0$-$P_6$}{polyline}{0.3}{R}
+A polyline is a series of line segments and is determined by a sequence of points $(P_0,...,P_n)$ $n \in \mathbb{N}$ where each line segment connecting a pair of adjacent points $[P_i,P_{i+1}]$ $i \in \mathbb{N}_{\le n}$ forms a vertex in the polyline.
+
+\vskip 0.2in
+
+In the continuum[source:wiki] "the curvature at a point of a differentiable curve is the curvature of its osculating circle"  which more formally can be defined in terms of the unit tangent $\vec T$ and the arc length $s$: \cite{CurvatureDefinition}
+
+$$\kappa  = \left\| {\frac{{d\,\vec T}}{{ds}}} \right\|$$
+
+This definition however cannot be used directly to determine the curvature of points in a polyline, given its non continuous nature. All straight segments would have a curvature of $0$ while the curvature in the edges would diverge to infinity. A new definition must be used to determine the curvature of a series line segments, which in turn can be used to approximate this series. A different definition can be derived from the quotient of the circular angle and the arc length:
+
+$$\kappa  =  {\frac{{d\,\varphi}}{{ds}}}$$
+
+Using this idea we can define the curvature from a point $A$, a heading  $\vec h$ in that point and a point $B$ as the reciprocal of the radius of the circle passing though $A$ and $B$ and being tangent to  $\vec h$ in $A$.
+
+\pic{Points $A$ with heading $\vec h$ and $B$ in circle}{discretecurvature}{0.5}
+
+Thus we can calculate the reciprocal of the radius of this circle as follows:
+
+Since $\vec h$ is tangent $\gamma=90^{\circ} - \alpha$ and $180^{\circ}=2\gamma+\beta$ thus $\beta = 2 \alpha$
+
+\picWrap{Example Curvature approximating a polyline in $A$}{curvatureExample}{0.25}{L}
+
+The length of the secant $s:=|\vec{AB}|$ can be calculated as
+$s = 2r \cdot  sin(\frac{\beta}{2})$
+$\Leftrightarrow$
+$\frac{1}{r} = \frac{2sin(\alpha)}{s}$
+
+Using this method we can calculate the average curvature of the curve that is tangent in $A$ to $\vec h$ and passing though $B$, which approximates the polyline connecting these points. The heading  $\vec h$ can also be derived using the next point after $A$ leading to $B$.
+Doing this for different distant points $B$ on a polyline gives us a suitable approximation for the course of a polyline starting from point $A$. Of course this neglects the shape of the polyline completely, which fails to detect S-curves between point $A$ and $B$, this however imposes no problem if we choose a fairly small distance between point $A$ and $B$ such that the variance of the curvature for intermediate points is non-significant.

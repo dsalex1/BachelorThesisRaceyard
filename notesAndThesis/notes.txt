@@ -1,0 +1,107 @@
+14.10.2021
+light slam farbinfos übermitteln
+src/rosyard_pipe_2_slam/src/light_slam.cpp:214-223
+
+zeile 168 cones soltlen farbe beinhalten
+
+in roswary_common/config/msg/Langmark.msg
+
+aus repo alexbagstuff löschen
+
+21.10.2021
+color info fertig
+par heuristiken zu color
+
+deep learning 
+literatur
+und ansätze/inputs/ideen
+
+reinforcement
+direkt von bild zu strecke ohne slam
+
+
+schreiben:
+outline
+grundlagen,
+deep learning, slam (so ne seite),
+stochastic gradient descent herleitung eventuell
+auf jeden fall theoretische grundlagen auch
+
+das was ich gemacht hab in notizen formulieren
+
+motivation/herleitung problem: raceyard allgemein
+
+
+28.10.2021 
+deeplerning und 
+related work 1-1.5p, einordnung in andere, was soll erforscht werden und oh wunder wird von mir gemacht
+in motivation schon autonomous racing cars
+
+ende november introduction und background inhaltlich quasi fertig, rohfassung die grundsätzlich abgebbar wäre
+
+research question
+
+systematischer vergleich von ansätzen zum erstellen von karte zum autonomous racing 
+
+overleaf für latex 
+
+im background, used technologies
+
+
+4.11
+uncerternity threshhold auswirkungen analzsieren, sicherheit in der karte vs rauschen
+nicht fertige lösung fürs auto wäre okay 
+evaluation wie weit voraus notwendign sinnvoll etc
+slam ids nicht matchen können beschrieben, 
+weil particles getrennt kann man nicht gut mathcen, 
+zu inperformant/wenn springen dann gar nicht
+
+related work: andere arbeiten nur slam und karte erkennen zusammenm
+oder neural networks, auf starße aber nicht pylonen eigentlichen
+aber ich beides z
+
+3 approach aus bild direk tkarte schätzem  
+
+future work, cnn als preprocessing vor slam, bounding box von cones zu ist cone ja nein und farbe, futrue work nicht in meiner arbeit
+
+metrik überlegen und implementieren, für klassischen algorithmus,
+zur auswertung
+
+todo: metriken, neural network arhcitektur, input outputs
+
+diesnatg in uni lars ab 13 uhr
+
+11.11
+
+cnn
+time series?
+fixed 
+
+ground truth aus simulation rausziehen
+
+slam car mit ground truth car matchen dann lokale umgebung
+
+~10k data sets
+10 strecken, 7 training, 3 für validierung 
+
+
+nicht nur curvature in 4 punkten sondern auch in 3, 2, 1 punkt
+
+bis montag entscheiden ob engloish oder deutsch in thesis
+
+18.11
+resnet 50 v2
+
+tensorboard
+w and b
+
+02.12
+andere strecken für test später
+
+bilder pixel skalieren  tf.keras.applications.mobilenet.preprocess_input
+
+sample_weight zum quasi begradigen des histograms vom input
+
+einleitung/grundlagen schreiben
+
+bildunterschrift länger, sodass es die grafik komplett erklärt, explizit alles erklären (nur nicht formeln herleiten)
