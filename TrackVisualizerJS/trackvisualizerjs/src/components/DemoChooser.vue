@@ -31,8 +31,8 @@ import { Options, Vue } from "vue-class-component";
 
 @Options({})
 export default class DemoChooser extends Vue {
-    private showModal = false;
-    private tracks = [
+    public showModal = false;
+    public tracks = [
         "acceleration",
         "FSG",
         "skidpad",

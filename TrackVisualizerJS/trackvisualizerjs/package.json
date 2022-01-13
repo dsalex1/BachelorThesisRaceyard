@@ -11,12 +11,15 @@
         "@popperjs/core": "^2.10.1",
         "bootstrap": "^5.1.1",
         "core-js": "^3.6.5",
+        "file-saver": "^2.0.5",
+        "jszip": "^3.7.1",
         "vue": "^3.0.0",
         "vue-class-component": "^8.0.0-0",
         "vue-property-decorator": "^9.1.2",
         "yamljs": "^0.3.0"
     },
     "devDependencies": {
+        "@types/file-saver": "^2.0.4",
         "@types/yamljs": "^0.2.31",
         "@typescript-eslint/eslint-plugin": "^4.31.0",
         "@typescript-eslint/parser": "^4.31.0",

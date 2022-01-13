@@ -66,9 +66,27 @@ export interface SlamDebugParticles {
     }[];
 }
 
+export interface EstimationMap {
+    header: Header;
+    cone_yellow: {
+        position: Position;
+        color: number;
+    }[];
+    cone_blue: {
+        position: Position;
+        color: number;
+    }[];
+    cone_orange: {
+        position: Position;
+        color: number;
+    }[];
+    centerline: Position[];
+}
+
 export interface BagData {
     "/slam/map": SlamMap;
     "/slam/car": SlamCar;
+    "/gt/car": SlamCar;
     "/slam/debug/map": SlamDebugMap;
     "/slam/debug/particles": SlamDebugParticles;
 }

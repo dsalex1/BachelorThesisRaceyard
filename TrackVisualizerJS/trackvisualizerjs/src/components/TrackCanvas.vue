@@ -1,6 +1,6 @@
 <template>
     <div class="d-flex">
-        <div class="">
+        <div class>
             <div>
                 <h4>{{ name }}</h4>
             </div>
@@ -21,7 +21,8 @@
                 height="500"
             ></canvas>
             <div style="width: 500px">
-                click to edit single points (freeze ground truth before starting to edit)<br />
+                click to edit single points (freeze ground truth before starting to edit)
+                <br />
                 <div style="display: inline-block; background: #ff0000; width: 10px; height: 10px; border-radius: 5px" />
                 <div class="ms-1" style="display: inline-block; background: #0000ff; width: 10px; height: 10px; border-radius: 5px" />
                 left/right
@@ -86,11 +87,16 @@
             <button @click="download" class="btn btn-secondary my-2 me-4">Download</button>
             <button @click="addMissingPressed" class="btn btn-info my-2 me-4">Add missing</button>
             <button @click="calculatePython" class="btn btn-success my-2" :disabled="pythonLoading">
-                Calculate Python Midline <span v-if="pythonLoading">(loading...)</span>
+                Calculate Python Midline
+                <span v-if="pythonLoading">(loading...)</span>
             </button>
             <button @click="playSlamData()" class="btn btn-warning my-2 me-4">Play SLAM</button>
+            <button @click="generateTraningData" class="btn btn-secondary my-2 me-4">Generate Traning Data</button>
             <hr />
             <a id="downloadAnchorElem" style="display: none"></a>
+            <div class="form-group">
+                <TrainingsData :trainingDataPNGs="generatedTrainingsPNGs" />
+            </div>
             <div class="form-group">
                 <DemoChooser @fileSelected="openDemo" />
             </div>
@@ -149,7 +155,7 @@ import { Options, Vue } from "vue-class-component";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 //@ts-ignore
 import * as YAML from "yamljs";
-import type { BagData, SlamCar, SlamDebugMap } from "../types";
+import type { BagData, EstimationMap, Position, SlamCar, SlamDebugMap } from "../types";
 
 declare let loadPyodide: (opt: { indexURL: string }) => Promise<{
     runPython: (code: string) => any;
@@ -166,19 +172,19 @@ type Await<T> = T extends PromiseLike<infer U> ? U : T;
 
 @Options({})
 export default class TrackCanvas extends Vue {
-    private spacing = 30;
-    private trackWidth = 10;
+    public spacing = 30;
+    public trackWidth = 10;
 
-    private drawing = false;
-    private lastPos = [0, 0] as [number, number];
-    private startPos = [0, 0] as [number, number];
+    public drawing = false;
+    public lastPos = [0, 0] as [number, number];
+    public startPos = [0, 0] as [number, number];
 
     private distance = 0;
     private nextDotTargetDistance = this.spacing;
     private trackData = { pylons: [], groundTruth: [] } as Track;
     private detection = {} as Detection;
 
-    private outputError = "";
+    public outputError = "";
     private name = "";
 
     get context() {
@@ -287,8 +293,8 @@ export default class TrackCanvas extends Vue {
         this.name = "";
     }
 
-    private groundTruthToBeAdded = [] as [number, number][];
-    private freezeGroundTruth = false;
+    public groundTruthToBeAdded = [] as [number, number][];
+    public freezeGroundTruth = false;
 
     canvasMouseDown(event: MouseEvent) {
         this.drawing = true;
@@ -441,9 +447,9 @@ export default class TrackCanvas extends Vue {
         this.addMissing(cone_yellow, cone_blue, this.derivedWidth, this.derivedSpacingRed, this.derivedSpacingBlue, "#0000AA", -1);
         this.addMissing(cone_blue, cone_yellow, this.derivedWidth, this.derivedSpacingBlue, this.derivedSpacingRed, "#AA0000", 1);
     }
-    private derivedWidth = 0;
-    private derivedSpacingRed = 0;
-    private derivedSpacingBlue = 0;
+    public derivedWidth = 0;
+    public derivedSpacingRed = 0;
+    public derivedSpacingBlue = 0;
 
     findClosestPoint(points: readonly [number, number][], point: readonly [number, number]): [number, number] {
         return points.reduce((a, b) => (d([a[0], a[1]], point) < d([b[0], b[1]], point) ? a : b));
@@ -479,7 +485,7 @@ export default class TrackCanvas extends Vue {
         dlAnchorElem.setAttribute("download", "trackCones.json");
         dlAnchorElem.click();
     }
-    private pythonLoading = true;
+    public pythonLoading = true;
     async calculatePython() {
         if (this.pythonLoading || this.pyodide == null) return;
         this.pythonLoading = true;
@@ -579,26 +585,60 @@ export default class TrackCanvas extends Vue {
 
         //let result = YAML.parse(await files[0].text()) as YAMLFile;
         //this.loadYAMLFile(result);
-        let result = sliceIntoChunks(
-            text
-                .split("---")
-                .map((msg) => YAML.parse(msg))
-                .filter((s) => s),
-            2
-        ) as [SlamCar, SlamDebugMap][];
-        this.slamData = result.map(([car, slam]) => ({
-            "/slam/map": null as any,
-            "/slam/car": car,
-            "/slam/debug/map": slam,
-            "/slam/debug/particles": null as any,
-        }));
+        const parsedYAML = text
+            .split("---")
+            .map((msg) => YAML.parse(msg))
+            .filter((s) => s);
+
+        console.log(parsedYAML.length + " messages read");
+
+        let estimatedMap = parsedYAML.filter((a) => a.centerline).pop() as EstimationMap;
+
+        this.slamData = [];
+
+        let slamData = { car: null as SlamCar | null, slam: null as SlamDebugMap | null, gtCar: null as null | SlamCar };
+
+        for (let msg of parsedYAML) {
+            if (msg.velo_x !== undefined) slamData.gtCar = msg;
+            if (msg.car_state && msg.velo_x == undefined) slamData.car = msg;
+            if (msg.covariances) slamData.slam = msg;
+
+            if (slamData.car && slamData.slam && slamData.gtCar) {
+                this.slamData.push({
+                    "/slam/map": null as any,
+                    "/slam/car": slamData.car!,
+                    "/slam/debug/map": {
+                        ...slamData.slam!,
+                        groundTruth: estimatedMap.centerline
+                            .map(({ x, y }) => [x, y])
+                            .map(([x, y]) =>
+                                rotby(
+                                    [
+                                        x + (slamData.car!.car_state.x - slamData.gtCar!.car_state.x),
+                                        y + (slamData.car!.car_state.y - slamData.gtCar!.car_state.y),
+                                    ],
+                                    [slamData.car!.car_state.x, slamData.car!.car_state.y],
+                                    ((slamData.car!.car_state.theta - slamData.gtCar!.car_state.theta) / Math.PI) * 180
+                                )
+                            )
+                            .map(([x, y]) => ({ x, y })),
+                    },
+                    "/slam/debug/particles": null as any,
+                    "/gt/car": slamData.gtCar!,
+                });
+                slamData = { car: null, slam: null, gtCar: null };
+            }
+        }
         this.slamData = this.slamData || (await (await fetch("./bags/bag.json")).json());
         this.slamDataCurrentFrame = 0;
-        this.playSlamData();
+
+        console.log("data mapped");
+        //this.playSlamData();
+        this.generateTraningData();
     }
-    private slamDataCurrentFrame = 0;
-    private slamDataInterval = 0;
-    private slamData: BagData[] = [];
+    public slamDataCurrentFrame = 0;
+    public slamDataInterval = 0;
+    public slamData: BagData[] = [];
     async playSlamData() {
         if (this.trackData.groundTruth.length != 0) {
             //generate from current map
@@ -628,11 +668,12 @@ export default class TrackCanvas extends Vue {
                         groundTruth: this.trackData.groundTruth.slice(i).map(([x, y]) => ({ x: x / 10, y: y / 10 })),
                     },
                     "/slam/debug/particles": null as any,
+                    "/gt/car": null as any,
                 });
             }
             this.slamData = this.slamData.slice(1);
         }
-        this.slamDataInterval = setInterval(() => this.slamDataCurrentFrame++, 100);
+        this.slamDataInterval = setInterval(() => this.slamDataCurrentFrame++, 100) as any;
     }
     async pauseSlamData() {
         clearInterval(this.slamDataInterval);
@@ -642,12 +683,12 @@ export default class TrackCanvas extends Vue {
     public updateFrame() {
         this.reset();
         let i = this.slamDataCurrentFrame;
-        this.handleBagData(this.slamData[i], this.slamData[i - 1] ? this.slamData[i - 1]["/slam/debug/map"].positions.length : 0);
+        this.handleBagData(this.slamData[i], true);
         if (this.slamDataCurrentFrame >= this.slamData.length - 1) return this.pauseSlamData();
     }
 
-    private drawGroundTruth = true;
-    private slamScale = 20;
+    public drawGroundTruth = true;
+    public slamScale = 20;
 
     @Watch("slamScale")
     private onScaleChange() {
@@ -658,17 +699,24 @@ export default class TrackCanvas extends Vue {
         this.updateFrame();
     }
 
-    handleBagData(data: BagData, oldIndex: number) {
-        const car = data["/slam/car"].car_state;
-        const slamMap: { [x in keyof Omit<BagData["/slam/debug/map"], "groundTruth">]: Omit<BagData["/slam/debug/map"], "groundTruth">[x][0] }[] = [];
-        data["/slam/debug/map"].positions.forEach((p, i) =>
+    private TRAINING_SAMPLE_RADIUS = 8;
+    private TSR = this.TRAINING_SAMPLE_RADIUS;
+
+    handleBagData(data: BagData, paint: boolean) {
+        const car = {
+            ...data["/slam/car"].car_state,
+            theta: (data["/slam/car"].car_state.theta / Math.PI) * 180 - 90,
+        };
+        let slamMap: { [x in keyof Omit<BagData["/slam/debug/map"], "groundTruth">]: Omit<BagData["/slam/debug/map"], "groundTruth">[x][0] }[] = [];
+        let len = data["/slam/debug/map"].positions.length;
+        for (let i = len - 500 > 0 ? len - 500 : 0; i < len; i++)
             slamMap.push({
                 positions: data["/slam/debug/map"].positions[i],
                 covariances: data["/slam/debug/map"].covariances[i],
                 colors: data["/slam/debug/map"].colors[i],
-            })
-        );
-        const newData = slamMap.slice(oldIndex);
+            });
+
+        //const newData = slamMap.slice(oldIndex);
 
         const colorMapping = { 121: "#FF0000", 98: "#0000FF", 110: "#003300", 114: "#003300" } as Record<number, string>;
 
@@ -679,28 +727,39 @@ export default class TrackCanvas extends Vue {
         const transform = (x: number, y: number): [number, number] =>
             plus(rot([(x + offsetX) * scale, (y + offsetY) * scale], -car.theta + 180), [250, 250]) as any;
 
-        this.drawCircleRaw(...transform(car.x, car.y), 4, "red");
-        this.drawArrow(transform(car.x, car.y), rot([0, 35], car.theta - car.theta + 180), "red");
+        if (paint) this.drawCircleRaw(...transform(car.x, car.y), 4, "red");
+        if (paint) this.drawArrow(transform(car.x, car.y), rot([0, 35], car.theta - car.theta + 180), "red");
 
-        slamMap.forEach(({ positions, covariances: { covariance }, colors }) => {
-            if (Math.min(covariance.reduce((a, c) => a + c) * 40) < 4)
-                this.drawCircleRaw(...transform(positions.x, positions.y), 2, colorMapping[colors]);
-            this.drawCircleRaw(...transform(positions.x, positions.y), Math.min(covariance.reduce((a, c) => a + c) * 2, 1) * 15, "#0000FF30");
-        });
-        newData.forEach(({ positions, covariances: { covariance }, colors }) => {
-            this.drawCircleRaw(...transform(positions.x, positions.y), 2, "#FF00FF");
-        });
+        if (paint)
+            slamMap.forEach(({ positions, covariances: { covariance }, colors }) => {
+                if (Math.min(covariance.reduce((a, c) => a + c) * 40) < 4)
+                    this.drawCircleRaw(...transform(positions.x, positions.y), 2, colorMapping[colors]);
+                this.drawCircleRaw(...transform(positions.x, positions.y), Math.min(covariance.reduce((a, c) => a + c) * 2, 1) * 15, "#0000FF30");
+            });
+        /*if (paint)
+            newData.forEach(({ positions, covariances: { covariance }, colors }) => {
+                this.drawCircleRaw(...transform(positions.x, positions.y), 2, "#FF00FF");
+            });*/
 
-        if (data["/slam/debug/map"].groundTruth && this.drawGroundTruth)
-            this.strokePolygon(
-                data["/slam/debug/map"].groundTruth.map(({ x, y }) => transform(x, y)),
-                "black",
-                2,
-                true,
-                true
-            );
-        let LOOK_AHEAD_DISTANCE = 1; //1 to 5 m in 1m intervals
-        let GTPoints = data["/slam/debug/map"].groundTruth?.map(({ x, y }) => [x, y] as const) || [];
+        let GTPoints: [number, number][] = [];
+        let gt = data["/slam/debug/map"].groundTruth!;
+        for (let i = 0; i < gt?.length; i++) GTPoints.push([gt[i].x, gt[i].y]);
+
+        let currentGTIndex = GTPoints.reduce((a, b, i) => (d(GTPoints[a], [car.x, car.y]) < d(b, [car.x, car.y]) ? a : i), 0);
+
+        GTPoints = GTPoints.slice(currentGTIndex);
+
+        if (paint)
+            if (data["/slam/debug/map"].groundTruth && this.drawGroundTruth)
+                this.strokePolygon(
+                    GTPoints.map(([x, y]) => transform(x, y)),
+                    "black",
+                    2,
+                    true,
+                    true
+                );
+
+        let LOOK_AHEAD_DISTANCE = 2; //1 to 5 m in 1m intervals
         let closedIndexes = [];
         for (let i = 0; i < 5; i++) {
             let indexClosest = 0,
@@ -709,20 +768,143 @@ export default class TrackCanvas extends Vue {
                 if ((distanceSum += d(GTPoints[indexClosest], GTPoints[indexClosest + 1])) > (i + 1) * LOOK_AHEAD_DISTANCE) break;
 
             closedIndexes.push(indexClosest);
-            this.drawCurvature(
-                ...transform(car.x, car.y),
-                car.theta - car.theta - 90,
-                curvature(GTPoints.slice(0, indexClosest)) / scale,
-                LOOK_AHEAD_DISTANCE * (i + 1) * scale,
-                ["#ff2500", "#ff6500", "#ffa500", "#ffe500", "#ffff00"][i]
-            );
+            if (paint)
+                this.drawCurvature(
+                    ...transform(car.x, car.y),
+                    angle(min(GTPoints[0], GTPoints[1])) - car.theta - 90,
+                    curvature(GTPoints.slice(0, indexClosest)) / scale,
+                    LOOK_AHEAD_DISTANCE * (i + 1) * scale,
+                    ["#ff2500", "#ff6500", "#eea500", "#ccbb00", "#aaaa00"][i]
+                );
         }
-        console.log(closedIndexes);
+        let startPoint = [car.x - this.TSR, car.y - this.TSR / 2];
+        let size = [this.TSR * 2, this.TSR * 2];
+
+        const coords = [
+            [startPoint[0], startPoint[1]],
+            [startPoint[0] + size[0], startPoint[1]],
+            [startPoint[0] + size[0], startPoint[1] + size[1]],
+            [startPoint[0], startPoint[1] + size[1]],
+            [startPoint[0], startPoint[1]],
+        ] as const;
+
+        if (paint)
+            this.strokePolygon(
+                coords.map((p) => rotby(p, [car.x, car.y], car.theta)).map((s) => transform(s[0], s[1])),
+                "black",
+                0,
+                true,
+                false
+            );
+
+        if (!paint) this.generateTrainingsDataFromFrame(car, slamMap, GTPoints);
     }
+
+    generateTrainingsDataFromFrame(
+        car: BagData["/slam/car"]["car_state"],
+        slamMap: { [x in keyof Omit<BagData["/slam/debug/map"], "groundTruth">]: Omit<BagData["/slam/debug/map"], "groundTruth">[x][0] }[],
+        GTPoints: (readonly [number, number])[]
+    ) {
+        let startPoint = [car.x - this.TSR, car.y - this.TSR / 2];
+        let size = [this.TSR * 2, this.TSR * 2];
+        const coords = [
+            [startPoint[0], startPoint[1]],
+            [startPoint[0] + size[0], startPoint[1]],
+            [startPoint[0] + size[0], startPoint[1] + size[1]],
+            [startPoint[0], startPoint[1] + size[1]],
+            [startPoint[0], startPoint[1]],
+        ] as const;
+
+        /*const GTForTraining = GTPoints.filter(([x,y])=>{
+            const [xT,yT] = rotby([x,y],[car.x,car.y],-car.theta)
+            return xT>=startPoint[0] && xT<=startPoint[0]+size[0] &&
+            yT>=startPoint[1] && yT<=startPoint[1]+size[1]
+        })*/
+        const slamMapForTraining = slamMap.filter(({ positions }) => {
+            const [xT, yT] = rotby([positions.x, positions.y], [car.x, car.y], -car.theta);
+            return xT >= startPoint[0] && xT <= startPoint[0] + size[0] && yT >= startPoint[1] && yT <= startPoint[1] + size[1];
+        });
+
+        let LOOK_AHEAD_DISTANCE = 2; //1 to 5 m in 1m intervals
+
+        let curvatures = [];
+        let closedIndexes = [];
+        for (let i = 0; i < 5; i++) {
+            let indexClosest = 0,
+                distanceSum = 0;
+            for (indexClosest = 0; indexClosest < GTPoints.length - 1; indexClosest++)
+                if ((distanceSum += d(GTPoints[indexClosest], GTPoints[indexClosest + 1])) > (i + 1) * LOOK_AHEAD_DISTANCE) break;
+
+            closedIndexes.push(indexClosest);
+            curvatures.push({ distance: LOOK_AHEAD_DISTANCE * (i + 1), curvature: curvature(GTPoints.slice(0, indexClosest)) });
+        }
+        const trainingData = {
+            curvatures,
+            pointData: slamMapForTraining.map((p) => {
+                const [xT, yT] = mul(rot(min([p.positions.x, p.positions.y], [car.x, car.y]), -car.theta), [1 / size[0], 1 / size[1]]);
+                return { ...p, positions: { x: xT, y: yT } };
+            }),
+            //gt: GTForTraining.map(p=> mul(rot(min(p,[car.x,car.y]),-car.theta),[1/size[0],1/size[1]])),
+        };
+        this.generatedTrainingsData.push(trainingData);
+    }
+
+    private generatedTrainingsData: {
+        curvatures: { distance: number; curvature: number }[];
+        pointData: {
+            positions: { x: number; y: number };
+            covariances: { covariance: number[] };
+            colors: number;
+        }[];
+        //gt: (readonly [number, number])[];
+    }[] = [];
+
+    generatedTrainingsPNGs: { img: string; labels: { distance: number; curvature: number }[] }[] = [];
+
+    async generateTraningData() {
+        this.generatedTrainingsData = [];
+        for (let i = 0; i < this.slamData.length; i++) {
+            if (i % 100 == 0) console.log(`handle bag data ${i}/${this.slamData.length}`);
+            this.handleBagData(this.slamData[i], false);
+        }
+
+        this.generatedTrainingsPNGs = await Promise.all(
+            this.generatedTrainingsData.map(async (trainingData, index) => {
+                if (index % 100 == 0) console.log(`generating images ${index}/${this.generatedTrainingsData.length}`);
+
+                const IMAGE_SIZE = 32;
+                let offscreen = new OffscreenCanvas(IMAGE_SIZE, IMAGE_SIZE);
+                let ctx = offscreen.getContext("2d")!;
+                let imageData = new ImageData(IMAGE_SIZE, IMAGE_SIZE);
+
+                for (let x = 0; x < IMAGE_SIZE; x++) for (let y = 0; y < IMAGE_SIZE; y++) imageData.data[(y * IMAGE_SIZE + x) * 4 + 3] = 255; // set alpha to 255 for all pixels
+
+                for (let { positions, covariances, colors } of trainingData.pointData) {
+                    let x = IMAGE_SIZE - Math.round((positions.x + 0.5) * (IMAGE_SIZE - 1)) - 1;
+                    let y = IMAGE_SIZE - Math.round((positions.y + 0.25) * (IMAGE_SIZE - 1)) - 1;
+                    //sum of covariances := x, atan to map [0,inf] to [0,1] and sqrt to even ditribution
+                    let confidence = Math.round((1 - ((Math.atan(covariances.covariance.reduce((a, c) => a + c)) / Math.PI) * 2) ** 0.5) * 255);
+
+                    if (colors != 98) imageData.data[(y * IMAGE_SIZE + x) * 4] = confidence;
+                    if (colors != 121) imageData.data[(y * IMAGE_SIZE + x) * 4 + 2] = confidence;
+                }
+
+                ctx.clearRect(0, 0, IMAGE_SIZE, IMAGE_SIZE);
+                ctx.putImageData(imageData, 0, 0);
+
+                let imagePNG = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (_e) => resolve(reader.result as string);
+                    offscreen.convertToBlob().then((data) => reader.readAsDataURL(data));
+                });
+
+                return { img: imagePNG, labels: trainingData.curvatures };
+            })
+        );
+    }
+
     loadYAMLFile(result: YAMLFile) {
         const { cones_left, cones_orange, cones_orange_big, cones_right } = result;
-
-        console.log([cones_left, cones_orange, cones_orange_big, cones_right]);
 
         const parsedSets = [cones_left, cones_orange, cones_orange_big, cones_right].map((list) =>
             list.map((p) => p.split("\n").map((x) => parseFloat(x.trim().slice(1))))
@@ -758,7 +940,6 @@ export default class TrackCanvas extends Vue {
     async JSONFilesChange(event: Event) {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         var files = (event.target as HTMLInputElement).files!;
-        console.log(files);
         let result = JSON.parse(await files[0].text()) as Track;
         this.reset();
         this.trackData = result;
@@ -817,6 +998,9 @@ function rot([x, y]: readonly [number, number], angle?: number) {
         Math.cos((angle / 180) * Math.PI) * x - Math.sin((angle / 180) * Math.PI) * y,
         Math.sin((angle / 180) * Math.PI) * x + Math.cos((angle / 180) * Math.PI) * y,
     ] as const;
+}
+function rotby(p: readonly [number, number], q: readonly [number, number], angle?: number) {
+    return plus(rot(min(p, q), angle), q);
 }
 function angle([x, y]: readonly [number, number]) {
     return ((Math.atan2(y, x) / Math.PI) * 180 + 90) % 360;
