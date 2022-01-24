@@ -105,3 +105,69 @@ sample_weight zum quasi begradigen des histograms vom input
 einleitung/grundlagen schreiben
 
 bildunterschrift länger, sodass es die grafik komplett erklärt, explizit alles erklären (nur nicht formeln herleiten)
+
+13.01.
+
+visualizer dokumentieren inein emd als anhang aber nicht in arbeit selbst
+
+für klassischen algorithmus vorhandene driver benutzen zum evaluieren
+
+illustration of curvature implied by A h and B. mehr fließtext, weniger stickpunktartig, headline und dann volltext, prosa
+
+zu nächster woche, kapitel, unterkapitel, wie viele seiten ungefähr, und bis wann fertig festlegen, 
+überlegen was zu wann machen, dokumentieren, in pipeline einbinden, schreiben
+
+präsentation, reviewen, bearbeiten noch mache, und puffer,daher zum 6. märz first final draft
+
+20.01
+
+development environment gar nicht so wichtig, nicht so viel zeit verschwenden
+
+immer wenn ich kapietel oder auch alelßs fertig hab gerne schicken 
+
+methodik könnte mehr werden, alles an gedanken einfließén lassen
+
+
+latenz/laufzeit betrachten als metrik von 
+
+
+begründungen für arbitrary entscheidungen durch ausprobieren oder gut begründen 
+
+future work, der vollständigkeit halber aufgelistet, limitationen der arbeit, als weiteren ausblick nicht als nicht geschafft
+
+2.2.1 MLP ausgeschrieben
+
+
+gt:
+reinforcement learning 
+in jeden zeitschritt weglaufen gut, hin schlecht
+grid patter mit bewertung 
+klassischer algorithmus tendenziell einfacher/sinnvoller
+==================================================
+fragen:
+abkürzungen in kapitel, unterkapitel
+
+20-40 pages
+
+third introduction + basics,
+a third methods
+third evaluation + discussion. 
+
+schreiben
+dokumentieren
+in pipeline einbinden
+
+18.01-19.01 zeitplanung, kapitel planung
+
+20.01-26.01 Introduction, Foundation Rosyard 
+27.01-02.02 and Machine Leaning
+
+03.02-09.02 Foundation fertig, in pipeline einbinden
+10.02-16.02 Methods classical approach, Methods ml approach
+
+17.02-23.02 Discussion Evaluation
+24.02-02.03 Discussion comparision, TrackVisualizerJS Documentation
+
+03.03-09.03 Conclusion, abstract, acknowledgemnts, etc
+
+10.03-31.03 Präsentation, Reviewen, Bindung, Zeitpuffer

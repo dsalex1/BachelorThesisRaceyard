@@ -1,15 +1,37 @@
 
 
-\graphicspath{{Chapter/Figs/basics/}}
+\graphicspath{{Chapter/Figs/FoundationsAndTechnologies/}}
 \chapter{Foundations and Technologies}
-\label{chap:basics}
+
+\section{Rosyard}
+Autonomous racing in track, first round second round
+\todo{0.5p}
+
+\subsection{The Rosyard Pipeline}
+\todo{1p}
+Dockerized
+
+\section{Machine Leaning}
+\todo{0.5p}
+\subsection{Deep Learning and MLPs}
+\todo{1p}
+Deep learning and \ac{mlp}s,
+\subsection{Convolutional Neural Networks}
+\todo{0.5p}
+\ac{cnn}
+
+%\subsection{Stochastic Gradient Descent}
+%
+%\section{Travelling Salesman Problem Approximation}
+%\ac{tsp}
 
 \section{Discrete Curvature}
 Discrete curvature applies the concept of curvature from a continuous curve to a discrete curve called a polyline.
 
 \vskip 0.2in
 
-\picWrap{Polyline over $P_0$-$P_6$}{polyline}{0.3}{R}
+\pic{A polyline over the vertices $P_0$ to $P_6$}{polyline}{0.3}
+
 A polyline is a series of line segments and is determined by a sequence of points $(P_0,...,P_n)$ $n \in \mathbb{N}$ where each line segment connecting a pair of adjacent points $[P_i,P_{i+1}]$ $i \in \mathbb{N}_{\le n}$ forms a vertex in the polyline.
 
 \vskip 0.2in
@@ -22,20 +44,39 @@ This definition however cannot be used directly to determine the curvature of po
 
 $$\kappa  =  {\frac{{d\,\varphi}}{{ds}}}$$
 
+
 Using this idea we can define the curvature from a point $A$, a heading  $\vec h$ in that point and a point $B$ as the reciprocal of the radius of the circle passing though $A$ and $B$ and being tangent to  $\vec h$ in $A$.
 
-\pic{Points $A$ with heading $\vec h$ and $B$ in circle}{discretecurvature}{0.5}
+\pic{Points $A$ with heading $\vec h$ and $B$ in circle with radius $r$, implying a curvature in point $A$ of $1/r$. The circle center and $B$ and $A$ form an isosceles triangle with base angle $\gamma$ and vertex angle $\beta$}{discretecurvature}{0.5}
 
 Thus we can calculate the reciprocal of the radius of this circle as follows:
 
 Since $\vec h$ is tangent $\gamma=90^{\circ} - \alpha$ and $180^{\circ}=2\gamma+\beta$ thus $\beta = 2 \alpha$
 
-\picWrap{Example Curvature approximating a polyline in $A$}{curvatureExample}{0.25}{L}
 
 The length of the secant $s:=|\vec{AB}|$ can be calculated as
 $s = 2r \cdot  sin(\frac{\beta}{2})$
 $\Leftrightarrow$
 $\frac{1}{r} = \frac{2sin(\alpha)}{s}$
 
+\picWrap{Example curvature of $1/r$ approximating a polyline leading from $A$ to $B$, the circle corresponding to the curvature has the radius $r$}{curvatureExample}{0.25}{L}
+
+\vskip 0.2in
+
 Using this method we can calculate the average curvature of the curve that is tangent in $A$ to $\vec h$ and passing though $B$, which approximates the polyline connecting these points. The heading  $\vec h$ can also be derived using the next point after $A$ leading to $B$.
 Doing this for different distant points $B$ on a polyline gives us a suitable approximation for the course of a polyline starting from point $A$. Of course this neglects the shape of the polyline completely, which fails to detect S-curves between point $A$ and $B$, this however imposes no problem if we choose a fairly small distance between point $A$ and $B$ such that the variance of the curvature for intermediate points is non-significant.
+
+
+\section{Simultaneous Localization and Mapping}
+\todo{0.5p}
+\ac{slam}
+
+\section{Development Environment Used}
+web technologies
+\todo{1p}
+
+\subsection{Pyodide}
+Pyodide \cite{pyodide}
+python script direkt im browser ausgeführt wird, und man dafür keinen extra server braucht um den python teil auszuführen,
+dadurch kann alles statically geserved werden, z.b. auf github pages: https://dsalex1.github.io/BachelorThesisRaceyard/
+\todo{0.5p}

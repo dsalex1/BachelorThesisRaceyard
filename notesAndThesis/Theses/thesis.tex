@@ -1,7 +1,7 @@
 % ******************************* PhD Thesis Template **************************
 % Please have a look at the README.md file for info on how to use the template
 
-\documentclass[a4paper,12pt,times,twoside,print]{Classes/PhDThesisPSnPDF}
+\documentclass[a4paper,12pt,times,twoside,print, draft]{Classes/PhDThesisPSnPDF}
 
 % ******************************************************************************
 % ******************************* Class Options ********************************
@@ -124,6 +124,7 @@
 
 \tableofcontents
 
+\listoftodos
 %\listoffigures
 %\listoftables
 
@@ -134,16 +135,14 @@
 % ******************************** Main Matter *********************************
 \mainmatter
 
-
-
 \include{Chapter/introduction}
-\include{Chapter/basics}
+\include{Chapter/foundationsAndTechnologies}
 \include{Chapter/methods}
-\include{Chapter/evaluation}
+\include{Chapter/discussion}
 \include{Chapter/conclusion}
-\include{Chapter/chapter1}
-\include{Chapter/chapter2}
-\include{Chapter/chapter3}
+%\include{Chapter/chapter1}
+%\include{Chapter/chapter2}
+%\include{Chapter/chapter3}
 
 
 % ********************************** Back Matter *******************************
@@ -182,8 +181,7 @@
   % \printnomenclature[space] space can be set as 2em between symbol and description
   %\printnomenclature[3em]
   \include{Special/acronym}
-  \include{Appendix/appendix1}
-  \include{Appendix/appendix2}
+  \include{Appendix/TrackVisualizerJSDocumentation}
 
 \end{appendices}
 

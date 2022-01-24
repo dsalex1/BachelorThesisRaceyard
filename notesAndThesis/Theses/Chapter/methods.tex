@@ -1,22 +1,41 @@
 \graphicspath{{Chapter/Figs/methods/}}
 \chapter{Methods}
-\label{chap:methods}
 
-Dies ist der Hauptteil der Arbeit.
-Hier sollte die Methodik erklärt werden.
-Implementierungsdetails können hier genannten werden, wenn dies nötig ist.
-Das nächste \autoref{chap:methods} kann auch mit diesem Hauptteil kombiniert werden.
+\section{Classical Approach}
 
+\subsection{Basis - Master Project by Vaishnav/Agrawal}
+based on master project Vaishnav/Agrawal
 
-\section{Images}
+Schwächen bsheriger Algorithmus, Rot anstatt Gelb, Schwarz nicht klassifizierte Punkte, Grau gänzlich nicht detektierte Punkte,
+schwarze Linie ground truth, Der Algorithmus macht die grüne Linie daraus.
+wo die Pylonen perfekt erkannt wurden, grüne Linie exakt auf ground truth,
+da wo die Farbe nicht erkannt wurde, passieren ganz komische dinge
+und da wo oben rechts gar keine Roten erkannt wurden weicht es sehr vom eigentlichen Track ab.
+Eingabekarte: https://gyazo.com/645d505ed8a7b1ae5bd6ac8d6a867348
+ERgebnis: https://gyazo.com/43237dba0fb02314743c860a9360e520
+\todo{0.5p}
 
-Bilder können individuell eingefügt werden oder über einen eigenen Befehl der in Preamble.tex definiert ist.
-\\
-Der korrekte graphicspath am Anfang dieser .tex Datei muss gesetzt sein.
+\subsection{First Improvement - Guessing Missing Points}
+1. readding missing points
 
-\pic{Beispielbild}{example}{0.5}
+erster Ansatz, Punkte auf einer Seite fehlen,
+also orthogonal zur Tangente eines Pylons mit dem Abstand der Trackbreite kein andersfarbiger Pylon, dann ergänzt
+https://gyazo.com/38577684278cf937f521c3c4cbf3835a
+\todo{2p}
 
-\section{Citations}
+\subsection{Second Improvement - Covariance Filtering}
 
+2. ansatz Covarianzen rumgespielt, nur Punkte mit entsprechend kleiner Covarianz
+mit covarianz filter: https://gyazo.com/8c58c259adede0fb5b1eb977704b9655
+echte daten:
+https://gyazo.com/60c4223b8f38d32ed84137b4aa98ae09
+\todo{1p}
 
-So kann man eine Quelle zitieren \cite{dropout}.
+\section{Machine Learning Approach}
+\subsection{Idea and Input/Output Design}
+curevature to points 2-8m further down the midline
+using immediate environment to predict the curvature of the line segment current on
+\todo{1p}
+\subsection{Modelling as Image Regressing Problem Using an CNN}
+mapping of input values to have a flatter distribution of values
+\todo{3p}
