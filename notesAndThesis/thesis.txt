@@ -1,17 +1,3 @@
-fragen:
-template für thesis/latex?
-frühere theses?
-zuordnung welche slam punkte "dieselben" sind über frames hinnaus, uuid?
-
-
-
-20-40 pages
-graphics and illustrations. 
-third introduction + basics,
-a third methods
-third evaluation + discussion. 
-  Hand in early drafts to your supervisor to get feedback and understand what is important to your supervisor. 
-
 
 abstract 
     - advancing technology in automation of driving and in controlled environment racing
@@ -20,74 +6,99 @@ abstract
     - and machine learning approach using mlp, cnn, etc.
 
 introduction
-    research question?
+    research question
+        systematischer vergleich von ansätzen zum erstellen von karte zum autonomous racing 
     motivation
+        in motivation schon autonomous racing cars
     goals
-    related work
+    related work, 1-1.5p
+        einordnung in andere, was soll erforscht werden und oh wunder wird von mir gemacht
+        
+        andere arbeiten nur slam und karte erkennen zusammenm
+        oder neural networks, auf starße aber nicht pylonen eigentlichen
+        aber ich beides z
 background/foundation
-    deep learning and mlp
+
+    rosyard
+        autonomous racing in track, first round second round
+    pipeline (dockerized)
+
+    deep learning and mlp, 1p
+    CNN
     (stochastic gradient descent)
 
     TSP approximation
-    (b-)splines (bezier curves?)
     discrete curvature
-    slam
+    slam, 1p
 
-    rosyard
-    pipeline (dockerized)
     dev environment
         web technologies/pyodide
+            python script direkt im browser ausgeführt wird, und man dafür keinen extra server braucht um den python teil auszuführen,
+            dadurch kann alles statically geserved werden, z.b. auf github pages: https://dsalex1.github.io/BachelorThesisRaceyard/
+            pyodide
 methods
     classical approach
         based on master project Vaishnav/Agrawal
+            Schwächen bsheriger Algorithmus, Rot anstatt Gelb, Schwarz nicht klassifizierte Punkte, Grau gänzlich nicht detektierte Punkte,
+            schwarze Linie ground truth, Der Algorithmus macht die grüne Linie daraus.
+            wo die Pylonen perfekt erkannt wurden, grüne Linie exakt auf ground truth,
+            da wo die Farbe nicht erkannt wurde, passieren ganz komische dinge
+            und da wo oben rechts gar keine Roten erkannt wurden weicht es sehr vom eigentlichen Track ab.
+            Eingabekarte: https://gyazo.com/645d505ed8a7b1ae5bd6ac8d6a867348
+            ERgebnis: https://gyazo.com/43237dba0fb02314743c860a9360e520
         improvements:
             1. readding missing points 
+                
+
+            erster Ansatz, Punkte auf einer Seite fehlen,
+            also orthogonal zur Tangente eines Pylons mit dem Abstand der Trackbreite kein andersfarbiger Pylon, dann ergänzt
+            https://gyazo.com/38577684278cf937f521c3c4cbf3835a
+
             2. using covariance to filter points
-            (3. use proximity to car to add points)
-            (4. use orientation relative to car to recolor)
-            5. b spline glätten 
+                2. ansatz Covarianzen rumgespielt, nur Punkte mit entsprechend kleiner Covarianz
+                mit covarianz filter: https://gyazo.com/8c58c259adede0fb5b1eb977704b9655
+            echte daten:
+            https://gyazo.com/60c4223b8f38d32ed84137b4aa98ae09
     machine learning approach
-        point 10m further down the midline
+        curevature to points 2-8m further down the midline
+        image reqgression problemusing CNN to 
 discussion
     evaluation how well solutions solve the problem respectively
+        classical approach
+            uncerternity threshhold auswirkungen analzsieren, sicherheit in der karte vs rauschen
+
+            slam ids nicht matchen können beschrieben, 
+            weil particles getrennt kann man nicht gut mathcen, 
+            zu inperformant/wenn springen dann gar nicht
+
+            evaluation wie weit voraus notwendign sinnvoll etc
+        machine learning approach
+            
     metrics
         local similarity, 
             transform to local coordinates
             use derivation of positions
             euclidian distance, more interpretability
+        letting driver test according to algorithm
     comparison of approaches
 conclusion
     future work
+        -improvements on slam 
+            Probleme des SLAMs wären wahrscheinlich noch verrauschte Position, Drifts und Doppelterkennungen.
+        -improvements on classical algorithm
+            - usage in first round
+            - use proximity to car to add points
+            Idee: neue Punkte nur in der Nähe des Autos zur Karte hinzufügen,
+            - use orientation relative to car to recolor
+            
+    -improvements on ml algorithm
+        - factoring in derivation from track center
+        - aus bild direk tkarte schätzem  
+    cnn als preprocessing vor slam, bounding box von cones zu ist cone ja nein und farbe
     where this work leads to
+appendix
+    visualizer documentation
+    
 
 
-Interesse an Projekt Autonomie-Aspekt geweckt, 
-Zusammenspiel aus Bild- und Lidar-Erkennung und Deep Learning,
-daraus abstrakte Darstellung der Umgebung und "path finding" darin.
-full self-driving autopilot Tesla, ähnliche Ambitionen zur Autonomie bei Raceyard
 
-Schwächen bsheriger Algorithmus, Rot anstatt Gelb, Schwarz nicht klassifizierte Punkte, Grau gänzlich nicht detektierte Punkte,
-schwarze Linie ground truth, Der Algorithmus macht die grüne Linie daraus.
-wo die Pylonen perfekt erkannt wurden, grüne Linie exakt auf ground truth,
-da wo die Farbe nicht erkannt wurde, passieren ganz komische dinge
-und da wo oben rechts gar keine Roten erkannt wurden weicht es sehr vom eigentlichen Track ab.
-Eingabekarte: https://gyazo.com/645d505ed8a7b1ae5bd6ac8d6a867348
-ERgebnis: https://gyazo.com/43237dba0fb02314743c860a9360e520
-
-
-erster Ansatz, Punkte auf einer Seite fehlen,
- also orthogonal zur Tangente eines Pylons mit dem Abstand der Trackbreite kein andersfarbiger Pylon, dann ergänzt
-https://gyazo.com/38577684278cf937f521c3c4cbf3835a
-
-Probleme des SLAMs wären wahrscheinlich noch verrauschte Position, Drifts und Doppelterkennungen.
-
-echte daten:
-https://gyazo.com/60c4223b8f38d32ed84137b4aa98ae09
-2. ansatz Covarianzen rumgespielt, nur Punkte mit entsprechend kleiner Covarianz
-mit covarianz filter: https://gyazo.com/8c58c259adede0fb5b1eb977704b9655
-
-Idee: neue Punkte nur in der Nähe des Autos zur Karte hinzufügen,
-
-python script direkt im browser ausgeführt wird, und man dafür keinen extra server braucht um den python teil auszuführen,
- dadurch kann alles statically geserved werden, z.b. auf github pages: https://dsalex1.github.io/BachelorThesisRaceyard/
-pyodide
