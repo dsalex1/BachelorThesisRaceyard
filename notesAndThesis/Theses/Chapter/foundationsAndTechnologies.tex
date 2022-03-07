@@ -3,22 +3,41 @@
 \graphicspath{{Chapter/Figs/FoundationsAndTechnologies/}}
 \chapter{Foundations and Technologies}
 
-\section{Rosyard}
-Autonomous racing in track, first round second round
-\todo{0.5p}
+\section{Raceyard and Formula Student}
+Formular Student is global competition for building racing cars. The subclass \ac{fsd} is focused on autonomous driving and is spit into different disciplines. Whereof Autocross is the most relevant for this thesis. The goal in Autocross is to drive a previously unknown track for one lap as fast as possible, so all data about the track must be gathered and processed in real time with no prior map.
+Since 2005 Raceyard is the Team from Kiel for Formula Student and aims to compete in \ac{fsd} in the upcoming competitions.
+
+\pic{The T-Kiel A CE, one of Raceyards latest cars (Source: https://raceyard.de/autos/)}{raceyard_car}{0.75}
 
 \subsection{The Rosyard Pipeline}
-\todo{1p}
-Dockerized
+The software that is to be used in \ac{fsd} by the Raceyard car is called "Rosyard" which is build on the \ac{ros} \cite{ros}.
+In \ac{ros} processing takes place in nodes which can communicate with each other using data channels called topics. The Nodes can be written in python or C++ and are connected in a way that forms a pipeline in a feed forward fashion. The pipeline reads sensory data in the beginning and outputs in the end control data for the vehicle. The pipeline consists of 5 stages which are each represented by a node:
+\begin{enumerate}
+    \item detection: sensory input from cameras
+    \item slam: extract landmarks and locate them in virtual map
+    \item estimation: estimate centerline to follow in map
+    \item driving: given map data decide steering and velocity
+    \item lowlevel: hardware controlling
+\end{enumerate}
+\missingfigure{ros pipeline visualized with topics}
+
+This thesis focuses on the implementation of the 3rd stage. Given the landmarks located in a virtual map from the \ac{slam} this node should estimate the course of the track, such that the 4th stage can successfully drive the car along the track.
+The pipeline is fully dockerized and runs in 4 different docker containers: the master node coordinating everything in \ac{ros}, an optional visualization container, a simulation container for providing fake sensory input, and a container running all 5 pipeline nodes.
 
 \section{Machine Leaning}
-\todo{0.5p}
-\subsection{Deep Learning and MLPs}
-\todo{1p}
-Deep learning and \ac{mlp}s,
+\ac{ml} describes a class of algorithms that have the ability to improve automatically, this process of improving is known as learning. Three different categories of learning can be distinguished, supervised learning, unsupervised learning and reinforcement learning. In supervised learning a set of labeled data, called training data is used to improve the parameters of the algorithm to make it predict labels better without explicit programming. Supervised learning can be used to train artificial neural networks. A \ac{nn} can be modelled as a directed graph consisting of artificial neuron as nodes and connection between neurons as edges. One example for artificial neurons are perceptrons. A perceptron is an abstract and mathematically easy to compute model of a biological neuron. A perceptron receives a number of inputs $x$ and using the weights of the inputs $w$ calculates their weighed sum $z=w \cdot x$, and passes it through an activation function $f$. This leads to the output
+$y=f(z)$ which is called the activation of the perceptron. Common activation functions include linear $f_{linear}(x)=a \cdot x$ for some factor $a \in \mathbb{R^+}$ (commonly $1$) and \ac{relu} $f_{ReLU}(x)=max(a,x)$.
+
+\subsection{Deep Learning and Multilayer Perceptions}
+Multiple Perceptrons can be arranged in layers to form a special kind of \ac{nn}, called \ac{mlp}. In such a layer a perceptron may only have a connection to perceptrons in the directly succeeding layer. A layer that has the maximum number of connections to the previous layer, such that each neuron is connected to each neuron in the previous layer is called fully connected layer. A \ac{mlp} consists of an input layer an output layer and a variable number of so-called hidden layers in between the input and output layer. By having at least 2 hidden layers the decision boundary of a \ac{mlp} can take an arbitrary form, allowing it in theory to solve arbitrarily complex problems as opposed to a single perceptron which can only solve linearly separable problems \cite{Lapedes1988}. In recent years the research primarily focuses on networks with an even greater number of hidden layers. Such networks, with a big number of layers are called deep networks. Since Deep networks most often use non-linear activation functions the optimal weights cannot be found analytically, other algorithms for learning must be used, called deep learning. One of those algorithms is backpropagation which uses gradient descent to learn the weights as an optimization problem of the weights in respect to the desired output.
+\missingfigure{mlp}
+
 \subsection{Convolutional Neural Networks}
-\todo{0.5p}
-\ac{cnn}
+In \ac{cnn}s the concept of \ac{mlp}s is extended by adding convolutional and pooling layers in a \ac{nn}. Convolutional layers allow for processing a big number of inputs while not imposing a huge number of learnable parameters as a fully connected layer would. Having this property convolutional layers are ideal for processing images, as even small images e.g. a 32x32 RGB image already has 3072 inputs.
+A convolutional layer uses a number of weights matrices called kernels of a fixed small size (e.g. 5x5). These kernels are convolved across the inputs width and height, meaning the dot product of the filter and a specific local region is computed for each input thereby computing a two-dimensional map of that kernel. The weights of the kernels can be learned using backpropagation, while certain hyperparameters must be set when designing the \ac{nn}. One of such parameters is the size and number of kernels used. Another hyperparameter is by how many pixels the kernel is "moved" after each calculation, thereby skipping pixels as center for the kernel. This hyperparameter is called stride. Around the edges the input needs to be padded (usually with zeros) so that the edges of the input can be processed as well.
+A pooling layer reduces the number of inputs by partitioning the input along the width and height into equal size chunks (e.g. 2x2) and computing an output for each of these chunks. Some commonly used pooling is max pooling, calculating the maximum of its inputs, and average pooling, calculating the arithmetical mean.
+Often, convolutional and pooling layers are succeeded by fully connected layers which are then used to compute the final output of a network.
+\missingfigure{Convolutional layer}
 
 %\subsection{Stochastic Gradient Descent}
 %
@@ -26,30 +45,27 @@ Deep learning and \ac{mlp}s,
 %\ac{tsp}
 
 \section{Discrete Curvature}
+
+\picWrap{A polyline over the vertices $P_0$ to $P_6$}{polyline}{0.3}{R}
+
 Discrete curvature applies the concept of curvature from a continuous curve to a discrete curve called a polyline.
 
 \vskip 0.2in
 
-\pic{A polyline over the vertices $P_0$ to $P_6$}{polyline}{0.3}
-
-A polyline is a series of line segments and is determined by a sequence of points $(P_0,...,P_n)$ $n \in \mathbb{N}$ where each line segment connecting a pair of adjacent points $[P_i,P_{i+1}]$ $i \in \mathbb{N}_{\le n}$ forms a vertex in the polyline.
-
-\vskip 0.2in
-
-In the continuum[source:wiki] "the curvature at a point of a differentiable curve is the curvature of its osculating circle"  which more formally can be defined in terms of the unit tangent $\vec T$ and the arc length $s$: \citep{CurvatureDefinition} \citep{Aup91}
+A polyline is a series of line segments and is determined by a sequence of points $(P_0,...,P_n)$ $n \in \mathbb{N}$ where each line segment connecting a pair of adjacent points $[P_i,P_{i+1}]$ $i \in \mathbb{N}_{\le n}$ forms a vertex in the polyline.\\
+\\In the continuum [source:wiki] "the curvature at a point of a differentiable curve is the curvature of its osculating circle"  which more formally can be defined in terms of the unit tangent $\vec T$ and the arc length $s$: \citep{CurvatureDefinition}
 
 $$\kappa  = \left\| {\frac{{d\,\vec T}}{{ds}}} \right\|$$
 
 This definition however cannot be used directly to determine the curvature of points in a polyline, given its non-continuous nature. All straight segments would have a curvature of $0$ while the curvature in the edges would diverge to infinity. A new definition must be used to determine the curvature of a series line segments, which in turn can be used to approximate this series. A different definition can be derived from the quotient of the circular angle and the arc length:
 
-$$\kappa  =  {\frac{{d\,\varphi}}{{ds}}}$$
+\pic{Points $A$ with heading $\vec h$ and $B$ in circle with radius $r$, implying a curvature in point $A$ of $1/r$. The circle center and $B$ and $A$ form an isosceles triangle with base angle $\gamma$ and vertex angle $\beta$}{discretecurvature}{0.5}
 
+$$\kappa  =  {\frac{{d\,\varphi}}{{ds}}}$$
 
 Using this idea we can define the curvature from a point $A$, a heading  $\vec h$ in that point and a point $B$ as the reciprocal of the radius of the circle passing though $A$ and $B$ and being tangent to  $\vec h$ in $A$.
 
-\pic{Points $A$ with heading $\vec h$ and $B$ in circle with radius $r$, implying a curvature in point $A$ of $1/r$. The circle center and $B$ and $A$ form an isosceles triangle with base angle $\gamma$ and vertex angle $\beta$}{discretecurvature}{0.5}
-
-Thus we can calculate the reciprocal of the radius of this circle as follows:
+Thus, we can calculate the reciprocal of the radius of this circle as follows:
 
 Since $\vec h$ is tangent $\gamma=90^{\circ} - \alpha$ and $180^{\circ}=2\gamma+\beta$ thus $\beta = 2 \alpha$
 
@@ -68,15 +84,10 @@ Doing this for different distant points $B$ on a polyline gives us a suitable ap
 
 
 \section{Simultaneous Localization and Mapping}
-\todo{0.5p}
-\ac{slam}
+\ac{slam} algorithms solve the chicken-and-egg problem localizing an agent in a map and mapping the environment surrounding an agent. Since for localization seemingly a map is needed and for creating a map of the surrounding the position of an agent needs to be known, the natural solution is to solve both simultaneous. While an exact solution is often not possible / or desirable computation cost wise, several methods exists that can approximate the problem. These Approximations for example use \ac{ekf}, graphs, or particle filters. The \ac{slam} used as input for the approaches in this thesis is an implementation of FastSLAM \cite{FastSLAM2002} which is based on particle filters. In FastSLAM particles are used as potential positions for the agent, at each time step a weight is assigned to the particles according to their likelihood of being consistent with the sensed nearby landmarks. Next new particles are created according to the spacial distribution of weight thereby converging to the actual position. In any time step the particle with the biggest weight is guessed as the actual current position and reported as such. This leads to the problem of jumping in the virtual space when the particles diverge to two or more different positions and the previous most likely position becomes less likely than another distant position. When this occurs the generated map along the estimated position jumps in a non-continuous way. This also imposes the problem that landmarks cannot be identified consistently across time, since every particle keeps track of its own landmarks and once the estimated position jumps the landmarks cannot be associated to the previous landmarks because the transformation is non-continuous. The output of FastSLAM is the incrementally build map of landmarks in relation to the estimated position of the agent. The landmarks have an uncertainty in the x and y dimension associated with them in form of a covariance matrix. This can later be used to filter for accidental detection of landmarks.
 
 \section{Development Environment Used}
-web technologies
-\todo{1p}
+For developing the approaches web technologies were used a development environment, as this allows for fast prototyping and easy building of a visual interface and visual output. Additionally, this makes the prototypes easily sharable as they can be hosted on a web server and be accessed via browser. Specifically the JavaScript  model-view-viewmodel framework vue.js\footnote{\url{https://vuejs.org/}} was used. Since the main source code of raceyard as well as the previous algorithm is written in python the ability to run python code was crucial for the development as well. While one possibility was to use a dedicated server run python code with specific parameters that reports the result back to the web application, a web integrated solution would be more desirable.
 
 \subsection{Pyodide}
-Pyodide \cite{pyodide}
-python script direkt im browser ausgeführt wird, und man dafür keinen extra server braucht um den python teil auszuführen,
-dadurch kann alles statically geserved werden, z.b. auf github pages: https://dsalex1.github.io/BachelorThesisRaceyard/
-\todo{0.5p}
+Pyodide is a port of CPython to WebAssembly \cite{pyodide} which allows the execution of python code directly within a browser using WebAssembly. As Opposed to other systems Pyodide doesn't cross compile python to JavaScript but uses a python runtime to execute python code on demand. Also, many of the most used scientific python libraries, e.g. NumPy, SciPy, Pandas and Mathplotlib are supported out of the box, which makes it useable for many python scripts without modification. The non-native execution, however, comes at a performance cost of running at about 2x to 10x slower than native python, depending on the amount of C code used in packages \cite{pyodide2021}\cite{Jangda2019}. Adding Pyodide to the dev environment allowed the Web application to be served completely statically, which meant that it could be published on a static website hosting service such as GitHub Pages\footnote{\url{https://dsalex1.github.io/BachelorThesisRaceyard/}}.

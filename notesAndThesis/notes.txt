@@ -137,15 +137,61 @@ future work, der vollständigkeit halber aufgelistet, limitationen der arbeit, a
 
 2.2.1 MLP ausgeschrieben
 
+27.01
 
-gt:
-reinforcement learning 
-in jeden zeitschritt weglaufen gut, hin schlecht
-grid patter mit bewertung 
-klassischer algorithmus tendenziell einfacher/sinnvoller
+goal
+
+belege für automation plays an essential role, 
+
+big car companies like tesla are investing in this topic
+
+formula student reference auf website
+
+aufzeigen was das problem ist, mehr im detail, wenn ich karte habe, und will fahren fehlt trajectory planing, was ist überhaupt tragectory planning, im zweiten absatz
+
+ganz konkret bei raceyard was probleme sind, was noch nicht geht, probleme aus dem absatz dann als ziele formulieren, robust sein gegen outliner, konfidnezen nutzen laufzeitanalysen
+
+für die problem und stuff gibt es in der literatur folgende möglichkeiten, 
+
+
+im foundations and technologies:
+in https://arxiv.org/abs/1905.05150 nachschauen nach referenzen nach fsd 
+
+referencen nur für wissenschaftlche quellen, bei grafiken angabe von wo in kurzform und url/zugiff als fußnote
+
+bei citations, 4 und 5 schauen welche conference, oder sonst archive, weil 
+keywords: latex bibliography typen
+
+zum 07.02 version schicken, nächstes mal am 10.02
+
+10.02
+trajectory planning und einfacher driver gebaut, anstatt mit trajectory planning driving mit zu meinen
+
+diesen unterschied eher auflösen
+
+goals vergleich mit einfügen als ziel, insgesamter prägnanter
+
+weniger tatsächliche arbeit beschreibein, sondern "fertige geschichte" erzählen
+
+related work zu theatralisch zu literalisch
+
+ersten satz zwar interessant, aber eher informativ als sprachlich
+
+
+master node "roscore"
+
+kurz darauf eingehen was andere learning kategorien sind
+
+muss mlp fully connected sein? quelle
+
+deep näher definieren, 
+
+über deep mlp macht keinen sinn, dann vanishing exploding gradients, lösung dafür cnn
+
+
+medium nicht als referenz, sondern als fußnote im text
 ==================================================
 fragen:
-abkürzungen in kapitel, unterkapitel
 
 20-40 pages
 
@@ -160,14 +206,14 @@ in pipeline einbinden
 18.01-19.01 zeitplanung, kapitel planung
 
 20.01-26.01 Introduction, Foundation Rosyard 
+
 27.01-02.02 and Machine Leaning
-
 03.02-09.02 Foundation fertig, in pipeline einbinden
+
 10.02-16.02 Methods classical approach, Methods ml approach
-
 17.02-23.02 Discussion Evaluation
-24.02-02.03 Discussion comparision, TrackVisualizerJS Documentation
 
+24.02-02.03 Discussion comparision, TrackVisualizerJS Documentation
 03.03-09.03 Conclusion, abstract, acknowledgemnts, etc
 
 10.03-31.03 Präsentation, Reviewen, Bindung, Zeitpuffer

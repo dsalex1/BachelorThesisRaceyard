@@ -1,34 +1,36 @@
+\graphicspath{{Chapter/Figs/introduction/}}
 \chapter{Introduction}
 
 \section{Motivation}
+Automation plays an essential role in the development of modern transport, as automation is the natural direction to take on in the seek of increased safety, efficiency and passenger comfort \cite{Lutin2018}. Autonomous racing sets a competition driven framework for the exploration of autonomous driving which incentivizes new innovations to take place. Thereby racing often sets the starting point for innovation to take over the whole industry pushing progress further \cite{Foxall91}. One example of such competition is \ac{fsd}.\footnote{\url{https://www.formulastudent.de/teams/fsd/}} \ac{fsd} challanges teams across several countries to build cars that can atonomously drive around fixed tracks that are defined by different colored cones. One car is racing at a time and is competing for the fastests lap rounds.\\
+\pic{Layout of an \ac{fsd} track (Source: FSG21 Competition Handbook, p.14, "Figure 2: Trackdrive")}{trackdrive}{1}
+\\The Problem of autonomous racing in this context can be split into three main parts, landmark detection and tracking, map generation and trajectory planning, and controlling the vehicle. The first step in autonomously driving a vehicle is to generate an abstract representation of its surrounding, to do this sensory input such as camera images, LIDAR data and odometric input from inertial measurement units is used to create and track landmarks in a virtual space and locate them relative to the vehicle. This task can be accomplished by \ac{slam} algorithms \cite{Singandhupe2019} and is not part of this thesis. On the other side the controlling of the vehicle uses specific driving parameters such as desired velocity and steering angle to control the various actuators, e.g. motors, that move the vehicle. This problem is very similar to the controlling of non-autonomous manually driven vehicles, since the main difference is the driving parameters coming from sensors like the acceleration pedal and steering wheel in manual driving as opposed to the output of a processing pipeline in autonomous driving. This is also not part of this Thesis. The problem that is left to solve is using the virtual space provided by the \ac{slam} to determine the driving parameters velocity and steering angle. This problem can be split into two parts. Map generation, which focuses on transforming information about landmarks into an abstract map of the racing track. And trajectory planning, which uses the abstract map to plan actions that will lead the vehicle to move along the track. This thesis looks at an extension of a previously worked on classical algorithm for map generation and a novel machine learning approach to solve map generation and trajectory planning in one step and systematically compares these two approaches.\\
 
 
 
-Autonomous racing sets a competition driven framework for the exploration of autonomous driving
-which plays important role in automation of modern transport. One example of such competition is
-Formula Student Driverless (FSD).
-one team that competes in this counteraction is rosyard, the Formular Student team of the Kiel university
+\section{Goals}
+Raceyard is a Kieler Team aiming to compete in \ac{fsd} and sets the framework for the implementation and application of the ideas presented in this thesis. As of writing this thesis a simplistic classical approach to map generation is used at Raceyard which imposes several problems which make the algorithm not yet useable for autonomous driving. For three of these problems this theses suggests an improvement. These are:
 
-in autonomous racing
-cars map generation crucial Problem\\
-basis for autonomous driver to decide its path\\
-look at different approaches for using data provided by \ac{slam} turn into usable map data for driver
-using a classical algorithm and a machine learning approach\\
-this thesis systematically compares these 2 approaches for the creation of map in autonomous racing
-\todo{0.5p}
+\begin{itemize}
+    \item Robustness against the incorrect detection of the color of landmarks (misdetection), missing landmarks completely (non-detection) and detection of landmarks twice or more with one detection being at the wrong place (over-detection): Using the current approach only some misdetections can be automatically corrected, any misdetection that can't be corrected renders the resulting map completely unusable. Also, non-detections are completely ignored, with leads to problems especially in narrow curves while over-detections are handled like normal landmarks leading to wrong predictions as well.
+    \item Using the certainty the \ac{slam} provides: The \ac{slam} assigns covariances representing the certainty in x and y direction to each landmark detected, this covariance is completely ignored by the current algorithm, although it could be beneficial to use.
+    \item Runtime: The current approach takes orders of magnitudes too long to be used in real time
+\end{itemize}
+
 \section{Related Work}
-
-einordnung in andere, was soll erforscht werden und oh wunder wird von mir gemacht\\
-
-andere arbeiten nur slam und karte erkennen zusammenm\\
-oder neural networks, auf starße aber nicht pylonen eigentlichen\\
-aber ich beides
-\todo{1p}
+Given the ever-growing field of autonomous driving an abundance of literature can be found about autonomous racing. However, all those works focus on key aspects that differ from this thesis in one or more ways. \\
+With regards to the classical approach to map generations several techniques have been documented. The following Papers apply a classical algorithm specifically to the Problem of autonomous racing in \ac{fsd}. AMZ Driverless \cite{kabzan2019amz} as well as Andresen et al. \cite{andresen2020} focus on an architecture using an ordinary \ac{slam} in conjunction with a Delaney triangulation do to path planning. Zeilinger et al. \cite{zeilinger2017} as well as KIT19d \cite{nekkah2020} use an \ac{ekf}-\ac{slam} to derive the center line for trajectory planning directly. Also, these papers do not take a look at Machine learning as an alternative for path planning.\\
+\\
+In Machine Learning some approaches to autonomous racing can be found, however none of those apply \ac{ml} to the problem of map generation and path planning in \ac{fsd} specifically. Dewing \cite{DewingNowTI} applied
+used a \ac{cnn} solve autonomous driving in a racing game. While Dziubiński \cite{dziubinski_2019} used a \ac{cnn} for steering a toy car in free terrain without cones to mark the path.\\
+\\
+One notable exception that applied machine learning to the problem presented in \ac{fsd} specifically is the work of Georgiev \cite{georgiev2019}. Georgiev implemented Williams et al. \cite{williams2016} \ac{mppi} in the Formula Student racing environment. \ac{mppi} uses a path integral over several possible trajectories to derive the best possible future trajectory in path planning. A Neural Network is used to train the parameters of the \ac{mppi}.\\
+\\
+To the knowledge of the author, no full \ac{ml} approach has been made specifically in the context of map generation in \ac{fsd}. Also, no comparison to a classical approach in \ac{fsd} has been conducted. This work evaluates a modified classic heuristic Algorithm in comparison to a \ac{ml} approach in the context of \ac{fsd} racing.
 
 \section{Thesis Structure}
-in the following chapter basics and technical baground explained\\
-in 3rd chapter the details of the classical and \ac{ml} approach, as well as their implementation presented\\
-in the 4th chapter the approaches are evaulated and compared,
-and in the last chapter the results are summarized and several improvements and ideas for future work are listed
-\todo{0.5p}
+In the following chapter basics and technical background is explained surrounding the two approaches and autonomous racing in general.\\
+Thereafter, in the third chapter the details of the classical and \ac{ml} approach, as well as their implementation is presented.\\
+In the 4th chapter the approaches are evaluated and compared,
+and in the last chapter the results are summarized and several improvement ideas and ideas for future work are listed.
 
