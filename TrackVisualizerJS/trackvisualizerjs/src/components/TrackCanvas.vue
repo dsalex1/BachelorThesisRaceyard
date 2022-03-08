@@ -33,6 +33,7 @@
                 <div class="ms-2" style="display: inline-block; background: #00ff00; width: 10px; height: 10px; border-radius: 5px" />
                 midline
             </div>
+            <img style="width: 200px; height: 200px" :src="currentTrainingPNG" />
         </div>
         <div class="ms-3" style="flex: 1">
             <div class="form-group">
@@ -156,6 +157,13 @@ import { Options, Vue } from "vue-class-component";
 //@ts-ignore
 import * as YAML from "yamljs";
 import type { BagData, EstimationMap, Position, SlamCar, SlamDebugMap } from "../types";
+import * as tf from "@tensorflow/tfjs";
+import "@tensorflow/tfjs-backend-webgl";
+import { Tensor } from "@tensorflow/tfjs";
+
+let tfjsModel: tf.LayersModel;
+
+tf.loadLayersModel("saved_model_tfjs/model.json").then((model) => (tfjsModel = model));
 
 declare let loadPyodide: (opt: { indexURL: string }) => Promise<{
     runPython: (code: string) => any;
@@ -634,7 +642,8 @@ export default class TrackCanvas extends Vue {
 
         console.log("data mapped");
         //this.playSlamData();
-        this.generateTraningData();
+        //this.generateTraningData();
+        this.simulateDriving();
     }
     public slamDataCurrentFrame = 0;
     public slamDataInterval = 0;
@@ -702,6 +711,8 @@ export default class TrackCanvas extends Vue {
     private TRAINING_SAMPLE_RADIUS = 8;
     private TSR = this.TRAINING_SAMPLE_RADIUS;
 
+    private lastCurvatures = [0, 0, 0, 0];
+
     handleBagData(data: BagData, paint: boolean) {
         const car = {
             ...data["/slam/car"].car_state,
@@ -723,12 +734,13 @@ export default class TrackCanvas extends Vue {
         const scale = this.slamScale;
         const offsetY = -car.y;
         const offsetX = -car.x;
+        const rotOffest = car.theta;
 
         const transform = (x: number, y: number): [number, number] =>
-            plus(rot([(x + offsetX) * scale, (y + offsetY) * scale], -car.theta + 180), [250, 250]) as any;
+            plus(rot([(x + offsetX) * scale, (y + offsetY) * scale], -rotOffest + 180), [250, 250]) as any;
 
         if (paint) this.drawCircleRaw(...transform(car.x, car.y), 4, "red");
-        if (paint) this.drawArrow(transform(car.x, car.y), rot([0, 35], car.theta - car.theta + 180), "red");
+        if (paint) this.drawArrow(transform(car.x, car.y), rot([0, 35], car.theta - rotOffest + 180), "red");
 
         if (paint)
             slamMap.forEach(({ positions, covariances: { covariance }, colors }) => {
@@ -771,11 +783,21 @@ export default class TrackCanvas extends Vue {
             if (paint)
                 this.drawCurvature(
                     ...transform(car.x, car.y),
-                    angle(min(GTPoints[0], GTPoints[1])) - car.theta - 90,
+                    angle(min(GTPoints[0], GTPoints[1])) - rotOffest - 90,
                     curvature(GTPoints.slice(0, indexClosest)) / scale,
                     LOOK_AHEAD_DISTANCE * (i + 1) * scale,
                     ["#ff2500", "#ff6500", "#eea500", "#ccbb00", "#aaaa00"][i]
                 );
+            if (paint)
+                //AI stuff
+                this.drawCurvature(
+                    ...transform(car.x, car.y),
+                    car.theta - rotOffest - 90,
+                    this.AICurvaturePrediction[i],
+                    LOOK_AHEAD_DISTANCE * (i + 1) * scale,
+                    ["#00ff25", "#00ff65", "#00eea5", "#00ccbb", "#00aaaa"][i]
+                );
+            this.lastCurvatures[i] = curvature(GTPoints.slice(0, indexClosest));
         }
         let startPoint = [car.x - this.TSR, car.y - this.TSR / 2];
         let size = [this.TSR * 2, this.TSR * 2];
@@ -790,7 +812,7 @@ export default class TrackCanvas extends Vue {
 
         if (paint)
             this.strokePolygon(
-                coords.map((p) => rotby(p, [car.x, car.y], car.theta)).map((s) => transform(s[0], s[1])),
+                coords.map((p) => rotby(p, [car.x, car.y], rotOffest)).map((s) => transform(s[0], s[1])),
                 "black",
                 0,
                 true,
@@ -872,35 +894,113 @@ export default class TrackCanvas extends Vue {
             this.generatedTrainingsData.map(async (trainingData, index) => {
                 if (index % 100 == 0) console.log(`generating images ${index}/${this.generatedTrainingsData.length}`);
 
-                const IMAGE_SIZE = 32;
-                let offscreen = new OffscreenCanvas(IMAGE_SIZE, IMAGE_SIZE);
-                let ctx = offscreen.getContext("2d")!;
-                let imageData = new ImageData(IMAGE_SIZE, IMAGE_SIZE);
-
-                for (let x = 0; x < IMAGE_SIZE; x++) for (let y = 0; y < IMAGE_SIZE; y++) imageData.data[(y * IMAGE_SIZE + x) * 4 + 3] = 255; // set alpha to 255 for all pixels
-
-                for (let { positions, covariances, colors } of trainingData.pointData) {
-                    let x = IMAGE_SIZE - Math.round((positions.x + 0.5) * (IMAGE_SIZE - 1)) - 1;
-                    let y = IMAGE_SIZE - Math.round((positions.y + 0.25) * (IMAGE_SIZE - 1)) - 1;
-                    //sum of covariances := x, atan to map [0,inf] to [0,1] and sqrt to even ditribution
-                    let confidence = Math.round((1 - ((Math.atan(covariances.covariance.reduce((a, c) => a + c)) / Math.PI) * 2) ** 0.5) * 255);
-
-                    if (colors != 98) imageData.data[(y * IMAGE_SIZE + x) * 4] = confidence;
-                    if (colors != 121) imageData.data[(y * IMAGE_SIZE + x) * 4 + 2] = confidence;
-                }
-
-                ctx.clearRect(0, 0, IMAGE_SIZE, IMAGE_SIZE);
-                ctx.putImageData(imageData, 0, 0);
-
-                let imagePNG = await new Promise<string>((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (_e) => resolve(reader.result as string);
-                    offscreen.convertToBlob().then((data) => reader.readAsDataURL(data));
-                });
+                let imagePNG = await this.generatePNGFromPointData(trainingData.pointData);
 
                 return { img: imagePNG, labels: trainingData.curvatures };
             })
         );
+    }
+    async generatePNGFromPointData(
+        pointData: {
+            positions: { x: number; y: number };
+            covariances: { covariance: number[] };
+            colors: number;
+        }[],
+        returnDataRaw?: boolean
+    ) {
+        const IMAGE_SIZE = 32;
+        let offscreen = new OffscreenCanvas(IMAGE_SIZE, IMAGE_SIZE);
+        let ctx = offscreen.getContext("2d")!;
+        let imageData = new ImageData(IMAGE_SIZE, IMAGE_SIZE);
+
+        for (let x = 0; x < IMAGE_SIZE; x++) for (let y = 0; y < IMAGE_SIZE; y++) imageData.data[(y * IMAGE_SIZE + x) * 4 + 3] = 255; // set alpha to 255 for all pixels
+
+        for (let { positions, covariances, colors } of pointData) {
+            let x = IMAGE_SIZE - Math.round((positions.x + 0.5) * (IMAGE_SIZE - 1)) - 1;
+            let y = IMAGE_SIZE - Math.round((positions.y + 0.25) * (IMAGE_SIZE - 1)) - 1;
+            //sum of covariances := x, atan to map [0,inf] to [0,1] and sqrt to even ditribution
+            let confidence = Math.round((1 - ((Math.atan(covariances.covariance.reduce((a, c) => a + c)) / Math.PI) * 2) ** 0.5) * 255);
+
+            if (colors != 98) imageData.data[(y * IMAGE_SIZE + x) * 4] = confidence;
+            if (colors != 121) imageData.data[(y * IMAGE_SIZE + x) * 4 + 2] = confidence;
+        }
+
+        ctx.clearRect(0, 0, IMAGE_SIZE, IMAGE_SIZE);
+        ctx.putImageData(imageData, 0, 0);
+
+        let imagePNG = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (_e) => resolve(reader.result as string);
+            offscreen.convertToBlob().then((data) => reader.readAsDataURL(data));
+        });
+        return (returnDataRaw ? imageData : imagePNG) as string;
+    }
+
+    public currentTrainingPNG = "";
+    async simulateDriving() {
+        this.slamDataCurrentFrame = this.slamData.length - 1;
+        setInterval(async () => {
+            const data = this.slamData[this.slamDataCurrentFrame];
+            const car = {
+                ...data["/slam/car"].car_state,
+                theta: (data["/slam/car"].car_state.theta / Math.PI) * 180 - 90,
+            };
+            let startPoint = [car.x - this.TSR, car.y - this.TSR / 2];
+            let size = [this.TSR * 2, this.TSR * 2];
+
+            let slamMap: { [x in keyof Omit<BagData["/slam/debug/map"], "groundTruth">]: Omit<BagData["/slam/debug/map"], "groundTruth">[x][0] }[] =
+                [];
+            let len = data["/slam/debug/map"].positions.length;
+            for (let i = len - 500 > 0 ? len - 500 : 0; i < len; i++)
+                slamMap.push({
+                    positions: data["/slam/debug/map"].positions[i],
+                    covariances: data["/slam/debug/map"].covariances[i],
+                    colors: data["/slam/debug/map"].colors[i],
+                });
+
+            const slamMapForTraining = slamMap.filter(({ positions }) => {
+                const [xT, yT] = rotby([positions.x, positions.y], [car.x, car.y], -car.theta);
+                return xT >= startPoint[0] && xT <= startPoint[0] + size[0] && yT >= startPoint[1] && yT <= startPoint[1] + size[1];
+            });
+            const pointData = slamMapForTraining.map((p) => {
+                const [xT, yT] = mul(rot(min([p.positions.x, p.positions.y], [car.x, car.y]), -car.theta), [1 / size[0], 1 / size[1]]);
+                return { ...p, positions: { x: xT, y: yT } };
+            });
+            this.currentTrainingPNG = await this.generatePNGFromPointData(pointData);
+            //console.log(this.lastCurvatures[2]);
+            const [speed, angle] = await this.steerCarFromPNG((await this.generatePNGFromPointData(pointData, true)) as any);
+            this.moveCar(speed, angle);
+            this.updateFrame();
+        }, 100);
+    }
+
+    public steering = 0;
+    async steerCarFromPNG(pixels: ImageData): Promise<[number, number]> {
+        //let tensorData = tf.from;
+        const tensorInput = tf
+            .tensor(pixels.data, [1, pixels.width, pixels.height, 4])
+            .slice([0, 0, 0, 0], [-1, -1, -1, 3])
+            .mul(1 / 255);
+        const prediction = (await (tfjsModel!.predict(tensorInput) as Tensor).data()).map((s: number) => (Math.sign(s) * Math.abs(s) ** 3) / 10);
+        //training data mapping (s=>Math.sign(s)*Math.abs(s)**(1/3)
+        //output unmapping (s=>Math.sign(s)*Math.abs(s)**3
+        const is = this.lastCurvatures[2] * 40;
+        this.steering = this.steering * 0.8 + 0.2 * prediction[1] * 40 * 30;
+        this.AICurvaturePrediction = prediction as any as number[];
+        console.log(is, this.steering);
+        return [(1 / (Math.abs(this.steering) + 8)) * 5, this.steering];
+    }
+
+    public AICurvaturePrediction: number[] = [0, 0, 0, 0, 0];
+
+    async moveCar(distance: number, angle: number) {
+        const { x, y, theta } = this.slamData[this.slamDataCurrentFrame]["/slam/car"].car_state;
+        const newTheta = theta + distance * ((angle * Math.PI) / 180);
+        const [newX, newY] = plus([x, y], rot(mul([1, 0], distance), (newTheta / Math.PI) * 180));
+
+        this.slamData[this.slamDataCurrentFrame]["/slam/car"].car_state.theta = newTheta;
+        this.slamData[this.slamDataCurrentFrame]["/slam/car"].car_state.x = newX;
+        this.slamData[this.slamDataCurrentFrame]["/slam/car"].car_state.y = newY;
     }
 
     loadYAMLFile(result: YAMLFile) {
