@@ -190,6 +190,31 @@ deep näher definieren,
 
 
 medium nicht als referenz, sondern als fußnote im text
+
+09.03
+https://git.informatik.uni-kiel.de/las/rosyard/-/blob/center_line/src/rosyard_common/msg/Map.msg
+# map of cones and centerline
+std_msgs/Header header
+
+rosyard_common/Cone[] cone_yellow
+rosyard_common/Cone[] cone_blue
+rosyard_common/Cone[] cone_orange
+
+geometry_msgs/Point[] centerline
+
+geometry_msgs/Point[] local_centerline
+
+((1.8,-0.1), (3.7, 0.723), (5.5, 0.27))
+
+build und devel ordner evtl löschen
+
+center_line_estimator name ändern
+
+todo:
+tesnorflow in py einbauen, in das format von node bringen
+classical auch in format bringen
+messages ändern
+auf master merge warten und dann einfügen
 ==================================================
 fragen:
 
