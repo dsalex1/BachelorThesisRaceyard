@@ -4,19 +4,47 @@
 \section{Classical Approach}
 
 \subsection{Basis - Master Project by Vaishnav/Agrawal}
-The basis for the classical algorithm is the Master Project of Vaishnav and Agrawal
-based on master project Vaishnav/Agrawal
+The basis for the classical Approach is the Master Project of Ashok Vaishnav and Akshay Agrawal in 2021 \footnote{https://git.informatik.uni-kiel.de/las/rosyard/-/blob/center_line/src/rosyard_pipe_3_estimation/Centerline_Estimation.pdf}.
 
-Schwächen bsheriger Algorithmus, Rot anstatt Gelb, Schwarz nicht klassifizierte Punkte, Grau gänzlich nicht detektierte Punkte,
-schwarze Linie ground truth, Der Algorithmus macht die grüne Linie daraus.
+implementatino of 3. step of the ros pipeline, given the position of cones estimated by slam, calcluate centerline which then form the path for the driver in the ?. step to follow along
+
+2 different scenarios, first lap, no information about the track, the trac must be driven and Simultaneous gather infomration about the track. after first round completed data about track available so more detailed plan about the track can be made, which allows for planning further ahead when driving.
+
+\missingfigure{task accomplished by the algorithm by Vaishnav/Agrawal}
+
+Diverting from the most optimal data the SLAM can provide there are 3 different types of anamolies the projects looks at. These are, missing cones (non-detections), misidentified cones (misdetection) and a shuffled pointcloud. A shuffled pointcloud meaning that in the datastructure which is provided by the SLAM the cones are not ordered spacially along the track. These problems are mitigated, yet not solved as seen later, by preprocessing the data. The Preprocessing consist of a reclassification using svm with radial basis function, sorted using naive next closest node, and reorientated by comparing x coordinates of the first 2 points
+then interpolated using b spline, then middle between every point of blue and closest yellow
+
+this in parts naive approach leads to problems when used with artificially constructed data that has errors or when used with simulated and real input data as well.
+
+following picture shows application of current algorithm on artificially created data, that contains some mis-detections and non-detections.
+
+Rot anstatt Gelb, Schwarz nicht klassifizierte Punkte, Grau gänzlich nicht detektierte Punkte,
+schwarze Linie ground truth,
+Der Algorithmus macht die grüne Linie daraus.
 wo die Pylonen perfekt erkannt wurden, grüne Linie exakt auf ground truth,
 da wo die Farbe nicht erkannt wurde, passieren ganz komische dinge
 und da wo oben rechts gar keine Roten erkannt wurden weicht es sehr vom eigentlichen Track ab.
 Eingabekarte: https://gyazo.com/645d505ed8a7b1ae5bd6ac8d6a867348
-ERgebnis: https://gyazo.com/43237dba0fb02314743c860a9360e520
+Ergebnis: https://gyazo.com/43237dba0fb02314743c860a9360e520
+
+this exmaple illustrates how the algorithm detects the centerline precisely when the data provided is error free. non-detections however are not handled at all and just skipped. misdetections lead to strange behavior, the reclassified cones leads to the calculated centerline being off to the side in direction of the reclassified cone.
+
+This deprecancies of an ideal detection were tried to be mitigated using several improvements over the current algorithm.
+
+A first simple improvement was to simplpy leave out the step of reclassifiing the cone colors using a svm. while a svm can correctly ressign the colors of cones where the color is uncertain in certain simple cases. it also incorrectly reassigns the color of cones where the color was detected with a high certainty, this together with the fact that correct detections of positions with an uncertain color/wrong color happens rare enough [reference for this probability] lead
+zeroth imporvement not using the reclassification when using real data, since it does more harm than good
 \todo{0.5p}
 
-\subsection{First Improvement - Guessing Missing Points}
+\subsection{first improvement - better tsp algorithm}
+
+2. ansatz Covarianzen rumgespielt, nur Punkte mit entsprechend kleiner Covarianz
+mit covarianz filter: https://gyazo.com/8c58c259adede0fb5b1eb977704b9655
+echte daten:
+https://gyazo.com/60c4223b8f38d32ed84137b4aa98ae09
+\todo{1p}
+
+\subsection{Second Improvement - Guessing Missing Points}
 1. readding missing points
 
 erster Ansatz, Punkte auf einer Seite fehlen,
@@ -24,7 +52,7 @@ also orthogonal zur Tangente eines Pylons mit dem Abstand der Trackbreite kein a
 https://gyazo.com/38577684278cf937f521c3c4cbf3835a
 \todo{2p}
 
-\subsection{Second Improvement - Covariance Filtering}
+\subsection{Third Improvement - Covariance Filtering}
 
 2. ansatz Covarianzen rumgespielt, nur Punkte mit entsprechend kleiner Covarianz
 mit covarianz filter: https://gyazo.com/8c58c259adede0fb5b1eb977704b9655
