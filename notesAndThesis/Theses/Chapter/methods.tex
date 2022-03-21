@@ -1,70 +1,69 @@
 \graphicspath{{Chapter/Figs/methods/}}
 \chapter{Methods}
 
+
 \section{Classical Approach}
 
 \subsection{Basis - Master Project by Vaishnav/Agrawal}
-The basis for the classical Approach is the Master Project of Ashok Vaishnav and Akshay Agrawal in 2021 \footnote{https://git.informatik.uni-kiel.de/las/rosyard/-/blob/center_line/src/rosyard_pipe_3_estimation/Centerline_Estimation.pdf}.
+The basis for the classical Approach is the Master Project of Ashok Vaishnav and Akshay Agrawal in 2021\footnote{\url{https://git.informatik.uni-kiel.de/las/rosyard/-/blob/center_line/src/rosyard_pipe_3_estimation/Centerline_Estimation.pdf}}.
+It provides an implementation of the 3rd step of the Rosyard pipeline, given the position of cones estimated by the SLAM, it calculates the centerline which forms the path for the driver in the 4th step to follow along.
+Two different scenarios need to be distinguished: In the first lap, no information about the track is known, and such the track must be navigated while simultaneously gathering information about the track to create a map that can be used in later laps. After first round is completed, data about the track is available so more detailed trajectory planning and navigation is possible, which allows for planning further ahead when driving. The Basis for this Approach primarily looks at the second case, where data about the whole track is available, while 
 
-implementatino of 3. step of the ros pipeline, given the position of cones estimated by slam, calcluate centerline which then form the path for the driver in the ?. step to follow along
+Diverting from the most optimal data the SLAM can provide there are 3 different types of anamolies the projects looks at. These are, missing cones (non-detections), misidentified cones (misdetection) and a shuffled pointcloud. A shuffled pointcloud meaning that in the datastructure which is provided by the SLAM the cones are not ordered spatially along the track. Two of these problems, misdetections and shuffled pointclouds are mitigated, yet not solved as seen later, by preprocessing the data. The preprocessing consist of a reclassification using a Support Vector Machine\cite{cortes1995}, which is a model that uses supervised learning to linerarly seperate data. By using a radial basis function the input is mapped into a higher dimensional space which allows a non linear separable problem in 2D to be solved linearly in higher dimensions. Next, the data is sorted using a naive closest neighbor sorting, and reorientated by comparing x coordinates of the first 2 points in the resulting dataset. After preprocessing the data is interpolated using a b spline with the dataset as control points. The centerline is retrieved by calculating the midpoint of every point of one side and the closest point to it on the other side.
 
-2 different scenarios, first lap, no information about the track, the trac must be driven and Simultaneous gather infomration about the track. after first round completed data about track available so more detailed plan about the track can be made, which allows for planning further ahead when driving.
+This partly naive approach leads to problems when used with artificially constructed data that has anormalies in it or when used with sfimulated or real input data as well.
 
-\missingfigure{task accomplished by the algorithm by Vaishnav/Agrawal}
+The following picture shows application of current algorithm on artificially created data, that contains some mis-detections and non-detections.
 
-Diverting from the most optimal data the SLAM can provide there are 3 different types of anamolies the projects looks at. These are, missing cones (non-detections), misidentified cones (misdetection) and a shuffled pointcloud. A shuffled pointcloud meaning that in the datastructure which is provided by the SLAM the cones are not ordered spacially along the track. These problems are mitigated, yet not solved as seen later, by preprocessing the data. The Preprocessing consist of a reclassification using svm with radial basis function, sorted using naive next closest node, and reorientated by comparing x coordinates of the first 2 points
-then interpolated using b spline, then middle between every point of blue and closest yellow
+For better visibility we choose Red to symbolize yellow cones, blue for blue cones, black represents cones with unknown/uncertain color so misdetections, Grey represents non-detections. The black line is the grounth truth of the centerline that was used to generate the data. The green line represents the centerline that is calculated by the algorithm. This exmaple illustrates some of the problems the current implementation has: It complete ignores nondetections, which leads to big deviations from the ground truth centerline when non-detections accumulate in a corner, as seen in the upper right corner. Misdetections lead to strange behavior, the reclassified cones causes the calculated centerline to deviate to the side in direction of the reclassified cone.
 
-this in parts naive approach leads to problems when used with artificially constructed data that has errors or when used with simulated and real input data as well.
+\pic{Application of the unmodified algorithm of Vaishnav/Agrawal to artificially created data that has some non-detections in the upper right corner and center, and some misdetections where no color was asigned spread across the track, the application shows that even slight imperfections in the input data lead to an unusable centerline}{classicalAlgorithm}{1}  
 
-following picture shows application of current algorithm on artificially created data, that contains some mis-detections and non-detections.
+This discrepancy to an ideal detection was mitigated using several improvements over the current algorithm.
 
-Rot anstatt Gelb, Schwarz nicht klassifizierte Punkte, Grau gänzlich nicht detektierte Punkte,
-schwarze Linie ground truth,
-Der Algorithmus macht die grüne Linie daraus.
-wo die Pylonen perfekt erkannt wurden, grüne Linie exakt auf ground truth,
-da wo die Farbe nicht erkannt wurde, passieren ganz komische dinge
-und da wo oben rechts gar keine Roten erkannt wurden weicht es sehr vom eigentlichen Track ab.
-Eingabekarte: https://gyazo.com/645d505ed8a7b1ae5bd6ac8d6a867348
-Ergebnis: https://gyazo.com/43237dba0fb02314743c860a9360e520
-
-this exmaple illustrates how the algorithm detects the centerline precisely when the data provided is error free. non-detections however are not handled at all and just skipped. misdetections lead to strange behavior, the reclassified cones leads to the calculated centerline being off to the side in direction of the reclassified cone.
-
-This deprecancies of an ideal detection were tried to be mitigated using several improvements over the current algorithm.
-
-A first simple improvement was to simplpy leave out the step of reclassifiing the cone colors using a svm. while a svm can correctly ressign the colors of cones where the color is uncertain in certain simple cases. it also incorrectly reassigns the color of cones where the color was detected with a high certainty, this together with the fact that correct detections of positions with an uncertain color/wrong color happens rare enough [reference for this probability] lead
-zeroth imporvement not using the reclassification when using real data, since it does more harm than good
-\todo{0.5p}
-
-\subsection{first improvement - better tsp algorithm}
-
-2. ansatz Covarianzen rumgespielt, nur Punkte mit entsprechend kleiner Covarianz
-mit covarianz filter: https://gyazo.com/8c58c259adede0fb5b1eb977704b9655
-echte daten:
-https://gyazo.com/60c4223b8f38d32ed84137b4aa98ae09
-\todo{1p}
+\subsection{First Improvement - Better spatial Ordering}
+Given a point cloud of unsorted points we need to find the continuous path that is best described by these points. Previously, the nearest neighbor algorithm was used: Starting at an arbitrary point it continued the path to the next closest point respectively until all points are used. This approach, however, leads to errors especially when parts of the path are close together. Especially in those erroneous cases one can observe that the correct path is the shortest possible path though the point cloud. \\\\
+\pic{Example for an erroneous spatial ordering: Given the pointcloud on the left, the pointclouds are sorted once according to the nearest neighbor algorithm starting at the marked larger point, and once according to the shortest path overall, the shortest path is the correct ordering}{spatialOrdering}{1} This means the Problem of finding a path to a given pointcloud can be modelled as the \ac{tsp}. Given that the \ac{tsp} is NP-hard\cite{Korte2008} it cannot be solved exactly while being efficient enough to be used with a larger number of points in realtime. The Algorithm of Christofides and Serdyukov was the ideal solution, leading to a better solution than a naive approach, while stil having an acceptable complexity of $O(n^2 * log(n))$\cite{Christofides2022}. This meant that using Christofides algorithm instead of nearest neighbour would lead to a better result, while still having a manageable runtime. 
 
 \subsection{Second Improvement - Guessing Missing Points}
-1. readding missing points
-
-erster Ansatz, Punkte auf einer Seite fehlen,
-also orthogonal zur Tangente eines Pylons mit dem Abstand der Trackbreite kein andersfarbiger Pylon, dann ergänzt
-https://gyazo.com/38577684278cf937f521c3c4cbf3835a
-\todo{2p}
-
+The second improvement looks at non-detections which were privously not accounted for at all. Giving the following scenario the previous algorithm would not be able to detect the track at all: Especially within sharp corners it is possible that one side of the track cannot be seen by the camera of the racing car at all. This leads to many non-detections on that side of the track while the other side can still be detected. This improvements detects these situations and guesses the positions of the non-detections to readd them thereby mitigating the non-detections.
+\pic{non-detections, and their handling using the old approach and the new approach)}{GuessingMissing}{1}
+This Approach guesses cone positions by checking for each cone whether it has a cone roughly on the other side of the track that corresponds to it. And if not, adds it where the corresponding cone would be expected. The estimated position of the corresponding cones can be calculated using the spatially sorted point clouds $Cones_B = (b_0,...,b_n)$ and $Cones_A = (a_0,...,a_m)$ for some $n,m \in \mathbb{N}$, the median track width $w$ and the median distance between cones $d$. $d$ can be calculated as the median over distances of neighboring cones $|\overline{a_i a_{i+1}}|$ and $|\overline{b_j b_{j+1}}|$ for $i<n,j<m \in \mathbb{N}$; $w$ can be calculated as the median over the distance between each cone and the closest point on the other side, $|\overline{a_i c(a_{i})}|$ and $|\overline{b_j c(b_{j}}|$ for $i<n,j<m \in \mathbb{N}$ where $c(a_i)$ is the closest Cone in $Cones_B$ to $a_i$ and $c(b_i)$ the closest cone in $Cones_A$ to $b_i$. Given that the track width and maximum cone distance are fixed along the track according to the \ac{fsd} rules\footnote{\url{https://www.formulastudent.de/fileadmin/user_upload/all/2021/rules/FSG21_Competition_Handbook_v1.0.pdf}, p.14} and outliers are ignored by using the median, this yields values close to the true width and distance.\\
+\\The following is repeated for $Cones_B$ and $Cones_A$ respectively, for simplicity we only take a look at $Cones_A$. For each consecutive three points in $Cones_A$, $(a_{i-1},a_{i},a_{i+1})$ the bisecting line of the angle between $\overline{a_{i-1},a_{i}}$ and $\overline{a_{i},a_{i+1}}$ is formed. With a distance of $w$ to $a_{i}$ this leads to two points on the bisecting line that could correspond to  $a_{i}$. If within $\frac{d}{2}$ of one of those 2 points a point in $Cones_B$ is found, nothing is done. If not,  the point that has the least distance to an existing point in $Cones_B$ is added. \\
+\\This is illustrated in the following example where $(A,B,C,D)$ are 4 consecutive points in $Cones_A$ and $(A',B',D')$ are the points in $Cones_B$ that are closest to $(A,B,D)$ respectively.
+\pic{Illustration of the guessing of missing cones where a cone is added}{readdingCase1}{1}
+We take a look at $B$: First, the bisecting angle $\alpha =\measuredangle  ABC$ and the bisecting line $b$ to $\alpha$ is formed. Now on the line $b$ with a distance of $w$ to $B$ two potential points are found $B'_1$ and $B'_2$. In the thrid step no point in $Cones_B$ is found that is within a distance of $\frac{d}{2}$ of either point. Thus the point that is closest to any point in $Cones_B$, $B'_1$, is added to $Cones_B$.
+In the following example the same procedure is repeated around point $C$.
+\pic{Illustration of the guessing of missing cones where no cone is added}{readdingCase2}{1} This time, however, there is a point found in $Cones_B$ around the proposed points $C'_1$ and $C'_2$, and such, no point is added.
 \subsection{Third Improvement - Covariance Filtering}
+\pic{Distribution of uncertainty in landmark detection over some simulated track drives}{covarianceDistribution}{1}
+The thrid improvement that proved itself useful especially when used with simulated data instead of artificially created data, is the incooperation of the covariance the \ac{slam} provides for each detected landmark. While the previous algorithm used all landmarks, the quality of the input data can be vastly improved by applying a threshhold based filter before passing the data to the centerline algorithm. The covariance matrix $A$ of a landmark is a 2x2 square matrix over the real numbers and describes the variance in the x- and y-dimension. Since the spatial orientation of the variance is not important in our case, in opposite to than the overall certainty of the position, we can simplify the covariance matrix into a single scalar uncertainty value $c$ by summing over the absolute value of its entries $c = \sum_{i=1}^m \sum_{j=1}^n |a_{ij}|$.
+\pic{Simulated track driving with different threshold filters, points left after filtering are marked as a black point, points filtered are vizualized as light blue circle with a radius proportional to the uncertainty, left side $c_\theta = 0.1$, right side original unfiltered data}{covarianceFiltering}{1}
 
-2. ansatz Covarianzen rumgespielt, nur Punkte mit entsprechend kleiner Covarianz
-mit covarianz filter: https://gyazo.com/8c58c259adede0fb5b1eb977704b9655
-echte daten:
-https://gyazo.com/60c4223b8f38d32ed84137b4aa98ae09
-\todo{1p}
+By analyzing the distribution of uncertainty over simulated testing courses, and heuristically a threshold value of
+
+$$c_\theta = 0.1$$
+was found to be most useful. This value, however, is very likely to change depending on the specific inputs provided to the \ac{slam} algorithm, and will likely need to be determined experimentally, since the ideal threshold is a direct consequence of the covariances of the landmark detection, which is a direct consequence of the implementation of the \ac{slam} as well as the input provided to it.
+
 
 \section{Machine Learning Approach}
 \subsection{Idea and Input/Output Design}
-curevature to points 2-8m further down the midline
-using immediate environment to predict the curvature of the line segment current on
-\todo{1p}
+The Problem of generating the centerline can be solved by abstracting to the problem of deciding the immediate next actions the driver can take on, while also the history of these local predictions can be later used to reconstruct the overall map. The local track surrounding the driver, especially in the direction of driving, can be modelled using the centerline alone, given that the track width is constant, furthermore the course of the centerline can be modelled using discrete curvature, since we can assume that certain parts of the track have a constant curvature. This can be illustrated by taking a look at the course of a typical \ac{fsd}track \footnote{\url{https://www.formulastudent.de/fileadmin/user_upload/all/2020/rules/FS-Rules_2020_V1.0.pdf}, p.130}: it consists of straight parts with approximately curvature 0 and curves which are distinct parts of a track with a constant curvature. To improve the expressiveness of a single curvature value describing the local future course. Several curvatures derived from differently distant points can be used that describe the course of the track up to an increasing distance, as seen later for example, five curvatures that estimate the course to a point 2m to 10m along in the direction of driving in 2m steps.
+
+This leads to a simple yet expressive output format of five real numbers that describe the course of the track that is immediately ahead of the driver. \\\\The Input parameters are the cones that surround the driver and are immediately ahead. Here, one can notice that the measurement of curvatures are invariant under translation along the track, e.g. a medium sharp right-hand curve yields the same curvature values regardless of its position in the track, if we set the position of the car and its heading as the starting point for measuring the curvature. That is, if we assume that the cars heading points in the same direction as the centerline, but as we will see later deviations from this are only beneficial in correcting the driving to align back with the centerline. This means we can pass the input to the neural network with positions in the local coordinate system of the car and eliminate thereby two additional input parameters, the position and heading of the car. With regard to the \ac{nn} architecture, the varying number of cones that are nearby lead to a varying number of inputs that need to be considered, thereby making it difficult to use a standard fully connected \ac{nn}, since the number of input neurons would need to be fixed.
 \subsection{Modelling as Image Regressing Problem Using an CNN}
-mapping of input values to have a flatter distribution of values
-\todo{3p}
+This leads to the idea of utilizing a convolutional neural network. Since the area that needs to be considered is fixed, the curvature of a given set of points is invariant under translation the representation of the input as image was ideal. Also, the certainty as well as the color of the cone can be represented in the hue and brightness of a pixel. This concludes the idea for prepocessing the input data before fed to the \ac{nn}. In the concrete implemention some parameters were choosen heuristically and later verified to suffice experimentally.\\
+\\
+\pic{Preprocessing of the cone data for the \ac{cnn}. The car is represented by the larger red circle with its heading as arrow, first the map is rotated and moved to the local coordinate system of the car, a region according to $TSP$ and $Car_{position}$ is selected and transformed into an Image of size $Image_{size}$ with the certainty transformed into the brightness of the corresponding pixel. The curvatures in 2m,...,10m are also shown as arrows in the center picture and numerically below the right picture}{preprocessing}{1}
+Sourrounding the driver a with a sample radius $TSP = 8m$ a square patch of space is used to generate in input for the \ac{nn}. inside this square the driver is centered vertically and horizonally offseted such that the drive is in the middle of the lower half of the square. Formally, if the square starts at $(0,0)$ and has size $(1,1)$ the cars position is $Car_{position}=(0.5,0.25)$. This meant cones $1.5TSP$ in front, $1TSP$ to either side, and $0.5TSP$ behind for context are considered for estimating the curvatures. An image size of $Image_{size}=32$ was chosen, because it gives a reasonable accuracy of $0.5m/pixel$, considering the track width of at least $3m$ according to the \ac{fsd} rules\footnote{\url{https://www.formulastudent.de/fileadmin/user_upload/all/2021/rules/FSG21_Competition_Handbook_v1.0.pdf}, p.14} while keeping the number of inputs small. The distribution of the certainty in cone detections posed another problem when transforming the certainty to a lightness value, since the distribution is very sharp around 0 and the uncertainty can take on arbitrary large values, the distribution needed to be transformed to fit the lightness range of $[0,1]$. To map the distribution from $[0,+\infty[$ to $[0,1]$ the arctangent is used, to further flatten the distribution it is squared and lastly inverted along the x axis. 
+\pic{Distribution of uncertainty of landmarks under some transformations: blue identity, yellow $x \mapsto atan(x)/2\pi$, green $x \mapsto(atan(x)/2\pi)^2$, red $x \mapsto 1-(atan(x)/2\pi)^2$}{distributionTransformation}{1}
+This lead to a much flatter distribution that is bounded in $[0,1]$ using the transformation $x \mapsto 1-(atan(x)/2\pi)^2$ which makes the uncertainty much easier to be picked up on by the \ac{nn}\cite{Sola1997} than the very sharp distribution it had to begin with. 
+The desired output, and such the labels for the training data, are calculated using the provided ground truth centerline data for simulated tracks. For each frame in a simulated drive though, the discrete curvature from the current position on the centerline with a heading that is tangent to the centerline in that point, and a point on the centerline that is $2m, ..., 10m$ further away on the centerline respectively. Using the raw curvatures, however, is problematic as well, since the distribution is fairly dense around zero while being very sensitive to small deviations from zero. To mitigate this the desired output was transformed using a polynomial redistribution. For the data of the tracks of the last \ac{fsd} competition a transformation of $x \mapsto sgn(x)\cdot |x|^\frac{1}{3}$ made the distribution most uniform as seen in Figure 3.10
+\pic{Distribution of curvatures in \ac{fsd} tracks 2019 with transformation: blue identity, red $x \mapsto sgn(x)\cdot |x|^\frac{1}{3}$}{curvatureDistribution}{1}. \\
+\\
+After these transformations the problem is reduced to a simple image regression problem, regressing to $5$ floating point numbers that correspond to a $32\text{x}32$ RGB input image. To archive this a variation of the  LeNet-5\cite{Lecun1998} and AlexNet\cite{Alex2012} architecture was used. The LeNet-5 architecture was modified to fit the dimension of our input images, $32\text{x}32\text{x}3$, and altered by applying more recent concepts, using max-pooling instead of average and \ac{relu} instead of sigmoid as activation function. Lastly, the activation function of the output layer was changed to linear with 5 neurons, to be able to regress data instead of classication as used in LeNet-5\cite{Lecun1998} and AlexNet\cite{Alex2012}. 
+\pic{Architecture of the \ac{nn} used for the \ac{ml} algorithm, 2 convolutional layers with 3x3 kernels and subsequent max pooling with 3x3 kernel respectively, 2 dense layers with \ac{relu} activation function with 20 and 10 neurons respectively and dropout in the first layer and the output layer with 5 neurons and linear activation}{NNArchitecture}{1}. \\
+\\
+\subsection{Training}
+For the training data from simulated drive-troughs were used to generate one training sample per frame in the data. The original unaugmented data was used
+from simulated tracks from tracks that were used in the \ac{fsd} competition of the last years.

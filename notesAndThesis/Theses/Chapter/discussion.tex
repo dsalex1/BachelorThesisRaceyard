@@ -15,26 +15,26 @@ evaluation wie weit voraus notwendign sinnvoll etc
 \subsubsection{Metric - Deviation From \ac{gt}}
 examples for successful failed detection of the centerline
 \todo{1p}
-\subsubsection{Metric - Driving Test}
-letting driver test according to algorithm
-\todo{1p}
 
 
 \subsection{Machine Learning Approach}
 
+training using mean average loss with ADAM and 
+$learning_{rate}=0.001$ proved to be succinct, 15 epochs with 2 batch size, were already enough since the loss dropped quickly and was pretty stable, to prevent overfitting training ended already.\\
 low number of training samples already great results\\
 different parameters different learning results
 
 \todo{2p}
 
 \subsubsection{Metric - Driving Test}
-letting driver test according to algorithm
+letting driver test according to algorithm 
 \todo{1p}
 
 \section{Comparison of Approaches}
 ml more useful in first when there is no map data available, more robust for less accurate map data\\
 less plannig ahead possible, work needed to generate map afterwards\\
-classical resulting in complete map where planning can be done extensively, but very fragile
+classical resulting in complete map where planning can be done extensively, but very fragile,
+classical only produces completely unusable able when used in the first round with incomplete round, because too incomplete and to noisy data
 \todo{1p}
 latenz/laufzeit betrachten als metrik
 
