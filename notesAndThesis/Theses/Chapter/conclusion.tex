@@ -2,8 +2,7 @@
 \label{chap:end}
 
 \section{Summary}
-Fasse nochmal alle Ergebnisse der Arbeit zusammen.
-\todo{0.5p}
+This work proposed solutions to the problem of map generation in the context of autonomous racing at the \ac{fsd} team from Kiel Raceyard. Two different approaches have been analyzed and compared, an extension of the previously used classical algorithm by Vaishnav/Agrawal was developed and a novel machine learning based algorithm was presented. Three improvements to the classical algorithm were proposed, an improved spacial ordering, the readdition of missing points using heuristic guessing and a filtering method based on the certainty of the detection. These improvements made the algorithm more robust especially against nondetections and color misdetections of cones. The algorithm still is very brittle and produces good results only if the input data is sufficiently error-free. If the input is suffciently precise it produces a very accurate centerline. The runtime of the \ac{ml} algorithm was an order of magnitude faster than the classical algorithm, which renders the \ac{ml} algorithm useable and the classical algorithm unusable in realtime. The \ac{ml} alrogithm has been shown to be very error resilient while still being able to approximate the centerline well enough, such that a simple driver can follow along the track without crossing the borders.
 
 \section{Future Work}
 \subsection{SLAM}
@@ -17,4 +16,3 @@ As  only original unaugmented data was used, one simple way to improve on the ma
 Another improvement could be to use a \ac{cnn} as preprocessing before passing data to the \ac{slam} especially for detecting the bounding boxes of cones in the image data, and estimating the color right from the image data alone before passing it to the slam
 \section{Outlook}
 Overall this work sets the first step towards driving the Raceyard race cars autonomously in real life, by contributing to the pipeline one of the last essential implementations that is needed before the first autonomous test drive can be commenced. While this thesis by no means provides an implementation that will win races, it provides many theoretical concepts for map generation, ideas for future development along a proof of concept that can very well be used in near future to drive the race car fully autonomously along a track for the very first time in real life.
-\todo{0.5p}
