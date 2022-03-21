@@ -1,40 +1,72 @@
+\graphicspath{{Chapter/Figs/evaluation/}}
 \chapter{Discussion}
 
 \section{Evaluation}
 \subsection{Classical Approach}
-uncerternity threshhold in covariances auswirkungen analzsieren\\
-sicherheit in der karte vs rauschen
-
-zeitlicher verlauf nicht verfolgbar weil
-slam ids nicht matchen können beschrieben,
-weil particles getrennt kann man nicht gut mathcen,
-zu inperformant/wenn springen dann gar nicht
-
-evaluation wie weit voraus notwendign sinnvoll etc
-\todo{1p}
-\subsubsection{Metric - Deviation From \ac{gt}}
-examples for successful failed detection of the centerline
-\todo{1p}
-
+\pic{The resulting landmarks after filtering using different certainty thresholds, $c_\theta=0.01$,  $c_\theta=0.05$ and $c_\theta=0.1$, on three different \ac{fsd} tracks "FSG", "FSI" and "Track 0", $c_\theta=0.05$ has the best results.}{covarianceFiltering}{0.9}  
+Anayzing the effect different covariance thresholds have on the quality of the resulting map, it is evident that $c_\theta=0.05$ performs best while with a smaller threshold of $c_\theta=0.01$ too many landmarks are filtered such that the resulting map is incomplete. With a larger threshold of $c_\theta=0.1$ too little noise is filtered out resulting in over-detections in the map.\\
+\\
+A problem that occurred in developing more advanced means of filtering noisy data is the inability to track landmarks across frames. While it should be in theory possible to pass the information of the change in landmarks over time, the current implementation of the \ac{slam} makes it difficult to do so since it assigns new identifiers to each landmark in each frame. Though, it would be possible to match Landmarks based on their position, since the change in position approximates a continues transformation, given small enough time steps between frames. This spatial matching, however, is not practical for performance reasons, as it would be computationally expensive. Also, the implementation of the particle \ac{slam}s uses different particles to determine the current position in the virtual map of which one is chosen with the highest certainty to provide the landmarks in the current frame. Because every particle tracks its own landmarks, once the \ac{slam} decides another particle has better certainty the estimated position as well as all landmarks jump non continuously to arbitrarily distant locations, which in turn makes spatial matching of landmarks impossible. The inability to track landmarks over time also means that it can not be determined which landmarks are new from one frame to another.
+\subsubsection{Analysis - Deviation From \ac{gt}}
+In the following all example figures will use the same structure/color scheme. Each figure consists of two parts: the input for the classical algorithm on the left for clarity and the input with overlayed output of the algorithm on the right. The thin green line represents the ground truth that was used to create artificial track data. Large red and blue dots represent input cone positions of yellow and blue cones respectively where yellow cones were replaced by red ones for better legibility. Very large light blue circles represent cones that were filtered out by the covariance filter, the radius of the circle represents the uncertainty of a particular cone. Black dots represent cone misdetections where no color was detected for certain. Grey dots represent cones that are not detected at all, nondetections. The output of the algorithm is vizualized in 3 parts: The large green dots represent the points of the calculated centerline, the light blue and light red small points represent the two sets of cones that are the result of preprocessing the cones, namely spatial ordered and readded missing cones. The arrows connecting these three parts mark the order these lists of points are in contained in the output arrays. This ordering can be used to see the orientation (clockwise/counter-clockwise) of these lists. \\ \\
+\pic{Examples where the classical approach works very well: Unaltered artifically created data on the left and artificially created data with non-detections and misdetections with no color certainty on the right}{workingClassical}{1}  
+While the centerline generally works really well with perfect data, it starts to produce less and less usable output with increasing errors in the input data. Artifically created data, as well as artificially created data with several non-detections and misdetections where no color is identified is handled very well. \\
+Since no reassignment of detected colors is done, and the algorithm assumes a closed loop as track, wrongly detected colors and partial tracks impose an immediate problem that is unhandled by the algorithm.
+\pic{Anormalies the classical approach can not handle: cones with misdetected certain colors on the right and non closed loops on the left}{errorsClassical}{1}  
+Appliying the Algorithm to Simulated \ac{slam} data gives mixed results depending on the particularities of a certain frame. More precisely, in frames where there happen to be little to no misdetected colors the algorithm performs well, detecting the centerline perfectly except for where the misdetected colors are. However, in frames where over-detections and misdetected colors are more present the orientation of the cones can not be determined correctly which leads to a centerline which is unsuable in major parts of the track. 
+\pic{The classical approach applied to simulated track data. In the upper example no color misdetections are present and overdetections are rare, which makes the algorithm perform well. In the middle example overdetections and color misdetections lead to a misjudgement of the orientation which breaks major parts of the centerline. In the bottom example two color misdetections break the centerline at these places.}{simulatedTracksClassical}{1} 
 
 \subsection{Machine Learning Approach}
-
-training using mean average loss with ADAM and 
-$learning_{rate}=0.001$ proved to be succinct, 15 epochs with 2 batch size, were already enough since the loss dropped quickly and was pretty stable, to prevent overfitting training ended already.\\
-low number of training samples already great results\\
-different parameters different learning results
-
-\todo{2p}
+The neural network for the \ac{ml} approach was trained using a mean average loss with ADAM as optimizer and a learning rate of $0.001$ these parameters were chosen heuristically and were proved to be succinct. The loss converged quickly and such only 15 epochs with a batch size of 2 were already enough to archive the most optimal validation loss while preventing overfitting. Additionally, a low number of training samples, 2000, lead to similar results in validation as 15000 and 20000 did. These settings lead to an average test loss of $0.112$
+\pic{The Training and Validation loss after 15 epochs with a batch size 2, 1400 training samples and 600 validation samples, ADAM with mean average loss, and $0.001$ learning rate}{training}{1} 
 
 \subsubsection{Metric - Driving Test}
-letting driver test according to algorithm 
-\todo{1p}
+Since the average loss alone is not very expressive in describing the usability of the neural network, it can be evaluated by letting a driver test the curvature predictions made by the algorithm. To archive this a simple test implementation of the 4th stage of Rosyard pipeline can be used, which applies a steering that is proportional to the estimated curvature $\kappa$. In the test implementation a proportionality constant of $k = 240$ in addition to a low-pass filter is used to smooth out rapid changes in steering, which is realized by exponential smoothing with a smoothing factor of $\alpha = 0.8$ this leads to the overall formula for the steering:
+$$steering_0= k\kappa$$
+$$steering_t= \alpha k\kappa + (1-\alpha)*steering_{t-1}, t > 0$$ 
+
+\pic{Track 1 being driven autonomously by the machine learning approach and a simple test driver. On the right a moderate right turn can be seen along the image the \ac{nn} sees. On the right an overview of the track can be seen while the car drives a moderate left turn along the image the \ac{nn} sees.}{mlDriving}{1} 
+
+Even though the neural network was trained only using training samples where the driver is centered on the track a deviation from centerline is interpreted beneficially as curve leaning towards the opposite direction, which forms a feedback loop that keeps the car in the middle of the track.\\
+Notably, this allows the car to stay on the track and drive laps completely without crossing the boundaries of the track. The approximative nature of a CNN allows it to drive even using very noisy data by finding a suitable approximation for the local centerline instead of solving the centerline exactly. This allows the \ac{cnn} to drive the first round without any prior data, however, the curvatures produced by the \ac{cnn} cannot be directly used to create a full centerline for the whole track, as only the local centerline directly in front of the car is approximated. This local approximation is by definition guaranteed to start at the position of the car, which might not be the center of the track. Lastly the \ac{cnn} cannot benefit from data about the rest of the track is not directly in front of the car.
+
+\pic{The same image fed into the \ac{nn} with three different x offsets, centered, positive offset and negative offset, the effect a deviation from the track center has on the prediction of curvatures makes the model predict a curve that lets the car return to the center in a closed feedback loop.}{centerDeviation}{1} 
+
 
 \section{Comparison of Approaches}
-ml more useful in first when there is no map data available, more robust for less accurate map data\\
-less plannig ahead possible, work needed to generate map afterwards\\
-classical resulting in complete map where planning can be done extensively, but very fragile,
-classical only produces completely unusable able when used in the first round with incomplete round, because too incomplete and to noisy data
-\todo{1p}
-latenz/laufzeit betrachten als metrik
 
+The classical and machine learning approach both solve different problems and work well in their domain.The classical algorithm produces accurate output when used with input with enough certainty and a low level of noise. It serves the goal of compute a complete precise centerline for the whole track. However when used with too noisy data it fails to detect the centerline completely, which is the case with the noise level the current slam implementation and preprocessing provides. The machine learning approach, is much more noise tolerant and usable without any contextual knowledge about the track so that it can be used in the first lap. Is more robust against erroneous data but produces only local overall less precise centerline points. Thus, less planning ahead is possible, and more work is needed to generate a complete map after completing a full round.\\
+Overall the classical approach produces precise centerline data when provided with the right data, but is so fragile that it fails to produce usable output consistently when used with simulated data, thereby rendering it - as is - useless to be used to drive the car. The machine learning approach on the other hand, while producing much less precise output, is noise resilient enough to successfully drive the car around the track.
+
+\subsection{Runtime}
+Another big advantage the \ac{ml} has over the classical approach is its runtime. An average track contains around XXXX cones which need to be processed by either algorithm to produce a centerline. The start-to-finish runtimes of a complete frame in either algorithm is compared in the following. The system used to measure the runtimes runs on a Intel(R) Core(TM) i7-5820K and NVIDIA GeForce GTX 980 Ti. The following runtimes were obtained over an average of XXXX frames
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{ |p{1.5cm} p{3cm}||p{4cm}|p{5cm}|  }
+    \hline
+    \multicolumn{4}{|c|}{Runtime per frame} \\
+    \hline
+    Track  & Number of Cones  & Classical Algorithm & Machine Learning Algorithm\\
+    \hline
+    \hline
+
+    \multirow{3}{*}{FSD} & 50  & 171ms & 0s \\
+                         & 100 & 910ms & 0s\\
+                         & 185 & 1948ms & 0s\\ 
+                         \hline
+    \multirow{3}{*}{FSI} & 50  & 93s & 0s\\
+                         & 101 & 622ms & 0s\\
+                         & 182 & 2397ms & 0s\\ 
+                         \hline
+    \multirow{3}{*}{Track 0} & 50  & 330s & 0s\\
+                             & 101 & 927ms & 0s\\
+                             & 269 & 5540ms & 0s \\ 
+                             \hline
+   \end{tabular}
+\caption{Runtimes per frame for the classical algorithm and machine learning algorithm on different tracks with a different number of cones present}
+\label{table:2}
+\end{table}
+171 910 1948 93 622 2397 330 927 5540
+50 100 185 50 101 182 50 101 269
+0.0005x^3-0.1368x^2+24.2215x-733.9375
