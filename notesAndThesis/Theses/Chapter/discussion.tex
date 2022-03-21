@@ -39,7 +39,7 @@ The classical and machine learning approach both solve different problems and wo
 Overall the classical approach produces precise centerline data when provided with the right data, but is so fragile that it fails to produce usable output consistently when used with simulated data, thereby rendering it - as is - useless to be used to drive the car. The machine learning approach on the other hand, while producing much less precise output, is noise resilient enough to successfully drive the car around the track.
 
 \subsection{Runtime}
-Another big advantage the \ac{ml} has over the classical approach is its runtime. An average track contains around XXXX cones which need to be processed by either algorithm to produce a centerline. The start-to-finish runtimes of a complete frame in either algorithm is compared in the following. The system used to measure the runtimes runs on a Intel(R) Core(TM) i7-5820K and NVIDIA GeForce GTX 980 Ti. The following runtimes were obtained over an average of XXXX frames
+Another big advantage the \ac{ml} has over the classical approach is its runtime. An average track contains around 200 cones half of which need to be processed on average by either algorithm to produce a centerline. The start-to-finish runtimes of a complete frame in either algorithm is compared in the following. The system used to measure the runtimes runs on a Intel(R) Core(TM) i7-5820K and NVIDIA GeForce GTX 980 Ti. The following runtimes were obtained over an average of 50 frames
 
 \begin{table}[h!]
 \centering
@@ -51,22 +51,21 @@ Another big advantage the \ac{ml} has over the classical approach is its runtime
     \hline
     \hline
 
-    \multirow{3}{*}{FSD} & 50  & 171ms & 0s \\
-                         & 100 & 910ms & 0s\\
-                         & 185 & 1948ms & 0s\\ 
+    \multirow{3}{*}{FSD} & 50  & 171ms & 63ms \\
+                         & 100 & 910ms & 61ms\\
+                         & 185 & 1948ms & 66ms\\ 
                          \hline
-    \multirow{3}{*}{FSI} & 50  & 93s & 0s\\
-                         & 101 & 622ms & 0s\\
-                         & 182 & 2397ms & 0s\\ 
+    \multirow{3}{*}{FSI} & 50  & 93s & 63ms\\
+                         & 101 & 622ms & 66ms\\
+                         & 182 & 2397ms & 65ms\\ 
                          \hline
-    \multirow{3}{*}{Track 0} & 50  & 330s & 0s\\
-                             & 101 & 927ms & 0s\\
-                             & 269 & 5540ms & 0s \\ 
+    \multirow{3}{*}{Track 0} & 50  & 330ms & 61ms\\
+                             & 101 & 927ms & 63ms\\
+                             & 269 & 5540ms & 68ms\\ 
                              \hline
    \end{tabular}
 \caption{Runtimes per frame for the classical algorithm and machine learning algorithm on different tracks with a different number of cones present}
 \label{table:2}
 \end{table}
-171 910 1948 93 622 2397 330 927 5540
-50 100 185 50 101 182 50 101 269
-0.0005x^3-0.1368x^2+24.2215x-733.9375
+
+The runtimes of the classical algorithm imply a cubic runtime in regard to the number of cones presented. The machine learning approach implies a constant runtime. Additionally, the \ac{ml} approach in the average case of about 100 cones takes an order of magnitude less time to execute per frame, while a constant execution time also helps to compute data reliably, regardless of how long the car has been running. The classical algorithm will eventually need to discard older data to maintain a constant execution time per frame. The classical algorithm is able to maintain about 1.6 \ac{fps} in the average case, 5 \ac{fps} in the best case and 0.5 \ac{fps} in the worst case. The machine learning algorithm was able to maintain 16 \ac{fps} consistently. 
