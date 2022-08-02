@@ -211,13 +211,55 @@ build und devel ordner evtl löschen
 center_line_estimator name ändern
 
 todo:
-tesnorflow in py einbauen, in das format von node bringen
-classical auch in format bringen
-messages ändern
-auf master merge warten und dann einfügen
+integration in rosyard testen/ oder weiter machen
+
+10.01.
+20 minuten vortrag reden plus dann nochmal fragen
+
+15 wäre okish 25 auch okayish
+
+professor koch sieht das projekt zum ersten mal, dementsprechend gut vortragen
+
+zoom, kamera mirko und präsentation
+
+inhaltlich stark an ausarbeitung bachelorarbeit orientieren, von der struktur her vorallem
+
+motivation sehr wichtig,
+
+formeln z.b. meistens nicht soo wichtig, nur erklären wenns essentiell ist
+gemischt aus bildern und text
+
+raceyard erklären ist essentiell beim erklären 
+
+deep learning quasi auf einer folie alles kurz erklären
+
+bis 17. die folien schon so angelegt, evtl noh nicht ausgearbeitet
+
+17.03.
+nach heuristik für wert entschieden, eher als experimentell,
+ 
+it should be in that range, and we found no major differences in similar values, therefore we choose that value
+
+qualitative auswertung ist anschauen ob  zu viel oder nicht, quantitative auswertung wäre schönerz. abstand zur mittellinie
+
+erwähnen dass der klassische nur blödsinn machen 
+
+spätestens bis zum 21. final draft
+
+präsentaiton
+outline: gedankenlichen gang präsentierne
+ich werde foudnation entwickeln zum methods zu erklären
+dessen ergebnis dann im evaluation zu machen und dann conclusion
+quasi damit roten faden etablieren sonst köntne ich auch weg lassen
+
+folie 5 bisschen viel text evtl
+folie 7 mehr aufspalten, nicht nur einen satz, sondern eine folie
+alles dazwischen weg lassen nur algorithms that can learn, zu cnn und dann spezifischer, relu linear, so high level erklären dass idee auch fachfremden klar werden
+
+tim mischels email einladeung
+bindung bei copy digital printing shop kiel 
 ==================================================
 fragen:
-
 20-40 pages
 
 third introduction + basics,
@@ -232,7 +274,7 @@ in pipeline einbinden
 
 20.01-26.01 Introduction, Foundation Rosyard 
 
-27.01-02.02 and Machine Leaning
+27.01-02.02 and Machine Learning
 03.02-09.02 Foundation fertig, in pipeline einbinden
 
 10.02-16.02 Methods classical approach, Methods ml approach

@@ -8,6 +8,7 @@ import json, argparse
 import random
 from christofides import tsp
 from statistics import median
+from timeit import default_timer as timer
 
 def cones_to_xy(cones):
     """ Expands the cone objects list to x, y position of cones
@@ -307,7 +308,8 @@ def pre_process_cones(blue_cones, yellow_cones, noisy_cones):
                 continue
 
             n = np.add(np.subtract(group1[i], group1[i + 1]), np.subtract(group1[i - 1], group1[i])) #tangent vector to group1[i]
-            n = np.divide([n[1],-n[0]],np.sqrt(np.sum(n**2))) # normalize and rotate by 90°, so we get the normal vector
+            if (np.sqrt(np.sum(n**2))>0):
+                n = np.divide([n[1],-n[0]],np.sqrt(np.sum(n**2))) # normalize and rotate by 90, so we get the normal vector
             point = np.add(group1[i], np.multiply(n, width * fac)) # fac decides whether its the inner or outer normal vector
 
             #find the point in the other group thats closest, if its so close, we dont need the new point
@@ -367,13 +369,18 @@ class CenterLineEstimation:
         return self.map
 
     def mapCallback(self, slam_map):
-        global args
+        #global args
+        args=None
         if self.calc_once:
             # print('Callback_Called')
 
-            cone_blue = [[304.21,185.84],[351.19,243.15],[317.43,326.95],[242.02,339.94],[176.5,323.98],[141.02,240.94],[186.19,164.72],[257.54,146.9]]
-            cone_yellow = [[269.83,230.04],[296.86,256.73],[288.62,278.93],[242.02,283.94],[201.54,273.9],[197.02,240.94],[205.85,217.16],[232.5,196.98]]
-            faulty_cones = []
+            cone_blue = [[290.7731453822212,76.76063159702124],[290.8962604476397,502.61886224093826],[292.60158459277574,642.9442893916919],[302.22984977033366,1077.303348696132],[301.5032577375763,1235.6253955999432],[211.52954808707494,1526.4762825936757],[95.30206131049769,1618.5569178238256],[290.1531777538964,224.38208270684135],[-52.15624529781962,1671.2325630325374],[-525.6322867009546,1690.2961710666032],[-995.9298878520613,1143.5677604418956],[-914.1273228547639,707.6735532213177],[-965.0327831545487,1295.261816505832],[-895.0473805506604,1438.9131141553655],[-215.5456028365969,1696.4546953639015],[-669.1252421901506,1646.3449312319142],[290.5910798602076,364.94200424520363],[-955.415666268794,848.8409801206051],[-373.3868662464429,1702.3555087971188]]
+            cone_yellow = [[295.2229150934445,784.1241475288405],[219.31046178606516,929.1747103484876],[215.58593878986687,785.2945822422688],[299.1912361131235,928.6446424409518],[221.741727176027,1077.7059904855375],[221.96776670189425,1228.4185143731966],[203.2585367647287,1363.8346185669773],[155.99042406487362,1469.743662661449],[-915.498483715093,1144.0130164871566],[-879.268455164364,871.337753071985],[-909.1213699371281,1009.8947708664109],[210.33700140551625,365.9434937955434],[211.6103791798869,503.98769861829214],[-736.468162036676,1504.9998595090951],[64.00539044842557,1546.103717333326],[-800.6219990819077,584.2611106150216],[-888.6700050980255,1275.0229596614158],[209.80311070572512,224.42816375183483],[210.6167671667024,75.6991912811703],[214.00028951270704,644.0372152768969],[-826.3497555665351,1399.4135427403692],[-628.4246687090128,1576.799922658145],[-219.8931514143685,1616.830858557344],[-987.45093612099,994.4825953073678],[-506.8802149278338,1612.540548283967],[-370.4099110340252,1621.9656317421297],[-67.27406264512126,1592.726153214215]]
+            faulty_cones = [[-837.0045327279136,729.3060614604381],[-794.4674482000044,1560.0380501253262],[-879.1677708627024,567.7667637226974],[278.45984498923315,1390.7202960900809]]
+
+            if self.initial_lap==False:
+                print(str(len(cone_blue)+len(cone_yellow)+len(faulty_cones))+" Cones")
+                self.initial_lap=True
 
             parser = argparse.ArgumentParser()
             parser.add_argument('--cone_blue', '-b', help="the cone_blue data to use", type=str)
@@ -450,7 +457,15 @@ class CenterLineEstimation:
 if __name__ == "__main__":
     center_line_est = CenterLineEstimation()
 
-    result = center_line_est.mapCallback(None)
+    trys = 30
+    print (str(trys) + " tries")
+    start = timer()
+    for i in range(trys):
+        result = center_line_est.mapCallback(None)
+    end = timer()
+    # Time in seconds, e.g. 5.38091952400282
+    print("{:10f}ms".format((end - start)/trys*1000))
+
     # try:
     #    while (True):
     #        maping = center_line_est.getMap()

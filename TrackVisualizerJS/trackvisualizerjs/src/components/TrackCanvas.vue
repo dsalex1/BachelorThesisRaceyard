@@ -83,6 +83,12 @@
                     <output class="ms-2">{{ slamScale }}</output>
                 </div>
             </div>
+            <div class="form-group">
+                <label>covariance filtering</label>
+                <div class="d-flex">
+                    <input class="form-range w-0 flex-1" v-model.number="covarianceThreshold" />
+                </div>
+            </div>
 
             <button @click="reset" class="btn btn-danger my-2 me-4">Reset</button>
             <button @click="download" class="btn btn-secondary my-2 me-4">Download</button>
@@ -112,7 +118,12 @@
             <hr />
             <div class="alert alert-danger" v-if="outputError">{{ outputError }}</div>
             <div class="form-group">
-                <label>output</label>
+                <label
+                    >output ({{
+                        trackData.pylons.filter((d) => (!d.hidden && (d.color == "#0000FF" || d.color == "#FF0000")) || d.undetect).length
+                    }}
+                    cones)</label
+                >
                 <textarea class="form-control" rows="7" v-model="output" wrap="off"></textarea>
             </div>
         </div>
@@ -217,7 +228,6 @@ export default class TrackCanvas extends Vue {
             faulty_cones = []
         `;*/
         (window as any).drawCurvature = this.drawCurvature.bind(this);
-        return;
         if (!(window as any).pyodide)
             (window as any).pyodide = await loadPyodide({
                 indexURL: "https://cdn.jsdelivr.net/pyodide/v0.18.0/full/",
@@ -284,9 +294,9 @@ export default class TrackCanvas extends Vue {
         this.context.beginPath();
         this.context.moveTo(from[0], from[1]);
         this.context.lineTo(to[0], to[1]);
-        this.context.lineTo(to[0] - headlen * Math.cos(angle - Math.PI / 6), to[1] - headlen * Math.sin(angle - Math.PI / 6));
-        this.context.moveTo(to[0], to[1]);
-        this.context.lineTo(to[0] - headlen * Math.cos(angle + Math.PI / 6), to[1] - headlen * Math.sin(angle + Math.PI / 6));
+        //this.context.lineTo(to[0] - headlen * Math.cos(angle - Math.PI / 6), to[1] - headlen * Math.sin(angle - Math.PI / 6));
+        //this.context.moveTo(to[0], to[1]);
+        //this.context.lineTo(to[0] - headlen * Math.cos(angle + Math.PI / 6), to[1] - headlen * Math.sin(angle + Math.PI / 6));
         this.context.strokeStyle = color;
         this.context.stroke();
     }
@@ -639,7 +649,6 @@ export default class TrackCanvas extends Vue {
         }
         this.slamData = this.slamData || (await (await fetch("./bags/bag.json")).json());
         this.slamDataCurrentFrame = 0;
-
         console.log("data mapped");
         //this.playSlamData();
         //this.generateTraningData();
@@ -696,7 +705,7 @@ export default class TrackCanvas extends Vue {
         if (this.slamDataCurrentFrame >= this.slamData.length - 1) return this.pauseSlamData();
     }
 
-    public drawGroundTruth = true;
+    public drawGroundTruth = false;
     public slamScale = 20;
 
     @Watch("slamScale")
@@ -707,6 +716,8 @@ export default class TrackCanvas extends Vue {
     private onDrawSlamChange() {
         this.updateFrame();
     }
+
+    private covarianceThreshold = 0.1;
 
     private TRAINING_SAMPLE_RADIUS = 8;
     private TSR = this.TRAINING_SAMPLE_RADIUS;
@@ -742,12 +753,25 @@ export default class TrackCanvas extends Vue {
         if (paint) this.drawCircleRaw(...transform(car.x, car.y), 4, "red");
         if (paint) this.drawArrow(transform(car.x, car.y), rot([0, 35], car.theta - rotOffest + 180), "red");
 
-        if (paint)
+        if (paint) {
+            this.trackData.pylons = [];
             slamMap.forEach(({ positions, covariances: { covariance }, colors }) => {
-                if (Math.min(covariance.reduce((a, c) => a + c) * 40) < 4)
+                if (Math.min(covariance.reduce((a, c) => a + c)) < this.covarianceThreshold) {
                     this.drawCircleRaw(...transform(positions.x, positions.y), 2, colorMapping[colors]);
-                this.drawCircleRaw(...transform(positions.x, positions.y), Math.min(covariance.reduce((a, c) => a + c) * 2, 1) * 15, "#0000FF30");
+                    this.trackData.pylons.push({
+                        x: transform(positions.x, positions.y)[0],
+                        y: transform(positions.x, positions.y)[1],
+                        color: colorMapping[colors],
+                        undetect: colors != 121 && colors != 98,
+                    });
+                }
+                this.drawCircleRaw(
+                    ...transform(positions.x, positions.y),
+                    Math.min((covariance.reduce((a, c) => a + c) * 2) / this.covarianceThreshold / 10, 1) * 15,
+                    "#0000FF30"
+                );
             });
+        }
         /*if (paint)
             newData.forEach(({ positions, covariances: { covariance }, colors }) => {
                 this.drawCircleRaw(...transform(positions.x, positions.y), 2, "#FF00FF");
@@ -780,14 +804,14 @@ export default class TrackCanvas extends Vue {
                 if ((distanceSum += d(GTPoints[indexClosest], GTPoints[indexClosest + 1])) > (i + 1) * LOOK_AHEAD_DISTANCE) break;
 
             closedIndexes.push(indexClosest);
-            if (paint)
+            /*if (paint)
                 this.drawCurvature(
                     ...transform(car.x, car.y),
                     angle(min(GTPoints[0], GTPoints[1])) - rotOffest - 90,
                     curvature(GTPoints.slice(0, indexClosest)) / scale,
                     LOOK_AHEAD_DISTANCE * (i + 1) * scale,
                     ["#ff2500", "#ff6500", "#eea500", "#ccbb00", "#aaaa00"][i]
-                );
+                );*/
             if (paint)
                 //AI stuff
                 this.drawCurvature(
@@ -967,8 +991,13 @@ export default class TrackCanvas extends Vue {
                 return { ...p, positions: { x: xT, y: yT } };
             });
             this.currentTrainingPNG = await this.generatePNGFromPointData(pointData);
-            //console.log(this.lastCurvatures[2]);
             const [speed, angle] = await this.steerCarFromPNG((await this.generatePNGFromPointData(pointData, true)) as any);
+            console.log("the data", {
+                car,
+                map: slamMap,
+                image: ((await this.generatePNGFromPointData(pointData, true)) as any).data,
+                output: [speed, angle],
+            });
             this.moveCar(speed, angle);
             this.updateFrame();
         }, 100);
@@ -987,7 +1016,8 @@ export default class TrackCanvas extends Vue {
         const is = this.lastCurvatures[2] * 40;
         this.steering = this.steering * 0.8 + 0.2 * prediction[1] * 40 * 30;
         this.AICurvaturePrediction = prediction as any as number[];
-        console.log(is, this.steering);
+        //console.log("raw prediction", await (tfjsModel!.predict(tensorInput) as Tensor).data());
+        //console.log("raw data", tensorInput.arraySync());
         return [(1 / (Math.abs(this.steering) + 8)) * 5, this.steering];
     }
 
